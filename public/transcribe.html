@@ -3,489 +3,357 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Translate Overlay (Sequential TTS)</title>
+  <title>Orbit Translator</title>
   <style>
-    :root{
-      /* Dark Background */
-      --bg: rgba(0,0,0,.92);
-
-      /* LimeGreen Theme */
-      --txt: #32cd32;
-      --stroke: rgba(50, 205, 50, .3);
-      --stroke2: rgba(50, 205, 50, .2);
-      --muted: rgba(50, 205, 50, .7);
-      --pill: rgba(0, 20, 0, .6);
-      --shadow: 0 14px 40px rgba(0,0,0,.6);
-
-      --radius: 8px;
-      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      --orb-size: 75px;
+    :root {
+      --bg: #0f0f0f;
+      --bg-panel: #161616;
+      --accent: #dca83a; 
+      --accent-rgb: 220, 168, 58;
+      
+      --txt: #f0f0f0;
+      --txt-light: #ffffff;
+      --stroke: #333333;
+      --stroke2: #222222;
+      --muted: #888888;
+      --pill: #111111;
+      
+      --radius: 12px; 
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     }
 
-    *{ box-sizing:border-box; }
-    html, body{
-      height: 100%;
-    }
-    body{
-      margin:0;
-      background:#050505;
-      color:var(--txt);
-      font-family: var(--mono);
-      height: 100%;
-      min-height: 100vh;
-      overflow:hidden;
-    }
-
-    .overlay{
-      position:fixed;
-      left:12px;
-      right:12px;
-      top:12px;
-      margin:auto;
-      max-width: 980px;
+    * { box-sizing: border-box; }
+    
+    body {
+      margin: 0;
       background: var(--bg);
+      color: var(--txt);
+      font-family: var(--mono);
+      height: 100vh;
+      display: flex;
+      justify-content: center; /* Center the component */
+      align-items: center;
+      overflow: hidden;
+    }
+
+    /* Standalone Translator Component */
+    .sidebar {
+      width: 100%;
+      max-width: 380px;
+      height: 100%;
+      max-height: 100vh;
+      background: var(--bg-panel);
+      border-left: 1px solid var(--stroke);
+      border-right: 1px solid var(--stroke);
+      display: flex;
+      flex-direction: column;
+      padding: 24px 20px;
+      gap: 20px;
+      box-shadow: 0 0 40px rgba(0,0,0,0.6);
+    }
+
+    /* Optional: Make it look like a floating widget on larger screens */
+    @media (min-height: 700px) {
+      .sidebar {
+        height: 92vh;
+        max-height: 850px;
+        border: 1px solid var(--stroke);
+        border-radius: 16px;
+      }
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 16px;
+      font-weight: bold;
+      letter-spacing: 0.05em;
+      color: var(--txt-light);
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--stroke2);
+    }
+
+    .header svg {
+      width: 24px;
+      height: 24px;
+      color: var(--accent);
+    }
+
+    /* Vertical Controls */
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .lang-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .lang-field label {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    select {
+      width: 100%;
+      padding: 12px;
+      background: var(--pill);
       border: 1px solid var(--stroke);
       border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      overflow:hidden;
-      -webkit-backdrop-filter: blur(6px);
-      backdrop-filter: blur(6px);
-      transition: height 0.3s ease;
-    }
-
-    .overlay.in-host{
-      position:absolute;
-      left:12px;
-      right:12px;
-      top:12px;
-      max-width: none;
-    }
-
-    body.embedded .overlay{
-      position: absolute;
-      inset: 0;
-      height: 100%;
-      margin: 0;
-      max-width: none;
-      border-radius: 0;
-    }
-
-    .topbar{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      padding:8px 10px 4px 10px;
-      gap:8px;
-    }
-
-    .leftGroup{
-      display:flex;
-      align-items:center;
-      gap:6px;
-      min-width: 0;
-      flex: 1;
-    }
-
-    .pill{
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-      padding:4px 8px;
-      border: 1px solid var(--stroke);
-      border-radius: 99px;
-      background: var(--pill);
       color: var(--txt);
-      font-size: 12px;
-      line-height: 1;
-      white-space: nowrap;
-    }
-
-    .pill button,
-    .pill select{
-      all: unset;
+      font-family: var(--mono);
+      font-size: 13px;
       cursor: pointer;
-      color: var(--txt);
-      font-size: 12px;
-      line-height: 1;
+      outline: none;
+      transition: border-color 0.2s;
     }
+    
+    select:focus { border-color: var(--accent); }
 
-    .pill select{
-      padding-right: 12px;
-      position:relative;
-    }
-
-    .arrow{
-      opacity:.8;
-      font-size:12px;
-      padding:0 2px;
-      -webkit-user-select:none;
-      user-select:none;
-    }
-
-    .rightGroup{
-      display:flex;
-      align-items:center;
-      gap:6px;
-      flex: 0 0 auto;
-    }
-
-    .iconBtn{
-      width:28px;
-      height:28px;
-      border-radius:6px;
-      border: 1px solid var(--stroke2);
-      background: rgba(50,205,50,.05);
-      color: var(--txt);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      cursor:pointer;
-    }
-
-    .iconBtn:hover{ background: rgba(50,205,50,.15); }
-
-    .content{
-      padding: 6px 12px 10px 12px;
-    }
-
-    /* ✅ TRANSLATED TEXT STYLE (Requested) */
-    .bigText{
-      font-size: 14px;          /* requested 14px */
-      color: #ffffff;           /* requested white */
-      line-height: 1.3;
-      letter-spacing: 0.1px;
-      word-break: break-word;
-      text-shadow: 0 0 5px rgba(50, 205, 50, 0.2);
-    }
-
-    .subline{
-      margin-top:8px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      color: var(--muted);
-      font-size: 11px;
-      border-top: 1px solid var(--stroke2);
-      padding-top:8px;
-    }
-
-    .statusDot{
-      width:8px;
-      height:8px;
-      border-radius:999px;
-      background: rgba(50,205,50,.3);
-      box-shadow: 0 0 0 1px rgba(50,205,50,.2) inset;
-    }
-
-    .statusDot.on{
-      background: #32cd32;
-      box-shadow: 0 0 0 2px rgba(50,205,50,.3) inset, 0 0 12px rgba(50,205,50,.5);
-    }
-
-    .statusDot.err{
-      background: #ff4d4d;
-      box-shadow: 0 0 0 2px rgba(255,77,77,.22) inset, 0 0 18px rgba(255,77,77,.20);
-    }
-
-    .chevronWrap{
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding: 0 0 6px 0;
-    }
-
-    .chevronBtn{
-      width:36px;
-      height:22px;
-      border-radius: 99px;
-      border: 1px solid var(--stroke2);
-      background: rgba(50,205,50,.05);
-      color: var(--muted);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      cursor:pointer;
-      font-size: 10px;
-      -webkit-user-select:none;
-      user-select:none;
-    }
-
-    .collapsed .content{ display:none; }
-    .collapsed .chevronBtn{ transform: rotate(180deg); }
-
-    .sidebar{
-      position: fixed;
-      left: 12px;
-      top: 50%;
-      transform: translateY(-50%);
-      z-index: 10000;
-    }
-
-    .sidebarBtn{
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      gap:6px;
-      width:56px;
-      padding:10px 8px;
-      border-radius: 12px;
-      border: 1px solid var(--stroke);
-      background: var(--pill);
-      color: var(--txt);
-      cursor:pointer;
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.18em;
-    }
-
-    .sidebarBtn:hover{ background: rgba(50,205,50,.18); }
-
-    .sidebarIcon{
-      width:24px;
-      height:24px;
-    }
-
-    .orb{
-      position: fixed;
-      right: 22px;
-      bottom: 22px;
-      width: var(--orb-size);
-      height: var(--orb-size);
-      border-radius: 999px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      cursor: grab;
-      z-index: 10001;
-      -webkit-user-select:none;
-      user-select:none;
-      touch-action: none;
-    }
-
-    .orb.dragging{ cursor: grabbing; }
-
-    .orbCore{
+    /* Main Action Button */
+    .action-btn {
       width: 100%;
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: var(--accent);
+      border: 1px solid var(--accent);
+      border-radius: var(--radius);
+      color: #111111;
+      font-family: var(--mono);
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 4px;
+    }
+
+    .action-btn:hover { 
+      background: #eac055; 
+      border-color: #eac055;
+    }
+    
+    .action-btn.active { 
+      background: transparent;
+      border-color: var(--accent);
+      color: var(--accent);
+      box-shadow: 0 0 15px rgba(var(--accent-rgb), 0.15);
+    }
+
+    /* Visualizer Bars */
+    .viz-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      height: 18px;
+      padding: 0 4px;
+    }
+
+    .viz-group {
+      display: flex;
+      align-items: flex-end;
+      gap: 3px;
       height: 100%;
-      border-radius: 999px;
-      background:
-        radial-gradient(circle at 30% 30%, rgba(255,255,255,.25), rgba(0,0,0,0) 45%),
-        radial-gradient(circle at 70% 70%, rgba(50,205,50,.18), rgba(0,0,0,0) 50%),
-        linear-gradient(135deg, rgba(26,40,26,.8), rgba(6,14,6,.95));
-      border: 1px solid var(--stroke);
-      box-shadow:
-        0 8px 26px rgba(0,0,0,.5),
-        0 0 22px rgba(50,205,50,.25) inset,
-        0 0 16px rgba(50,205,50,.2);
-      animation: orbPulse 3s ease-in-out infinite;
     }
 
-    .orbViz{
-      position:absolute;
-      inset:0;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      justify-content:center;
-      gap:4px;
-      pointer-events:none;
+    .viz-group label {
+      font-size: 9px;
+      color: var(--muted);
+      margin-right: 8px;
+      margin-bottom: 2px;
     }
 
-    .orbVizRow{
-      display:flex;
-      align-items:flex-end;
-      gap:3px;
-      height:12px;
-    }
-
-    .orbVizRow[data-viz="in"] .orbBar{
-      background: rgba(50,205,50,.85);
-    }
-
-    .orbVizRow[data-viz="out"] .orbBar{
-      background: rgba(255,255,255,.75);
-    }
-
-    .orbBar{
-      width:3px;
-      height:4px;
+    .orbBar {
+      width: 4px;
+      height: 4px;
       border-radius: 2px;
-      box-shadow: 0 0 8px rgba(50,205,50,.2);
       transition: height 0.08s ease-out;
     }
+    .viz-group.in .orbBar { background: var(--accent); box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.4); }
+    .viz-group.out .orbBar { background: var(--txt-light); box-shadow: 0 0 8px rgba(255,255,255, 0.3); }
 
-    @keyframes orbPulse{
-      0%,100%{ transform: scale(1); }
-      50%{ transform: scale(1.03); }
+    /* Split Content Area */
+    .split-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      overflow: hidden;
     }
 
-    @media (max-width: 720px){
-      .overlay{
-        left:8px;
-        right:8px;
-        top:8px;
-        max-width: none;
-      }
+    .text-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--pill);
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius);
+      padding: 16px;
+      overflow: hidden;
+    }
 
-      .topbar{
-        flex-direction:column;
-        align-items:flex-start;
-        gap:6px;
-      }
+    .panel-label {
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 10px;
+      border-bottom: 1px solid var(--stroke2);
+      padding-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+    }
 
-      .leftGroup{
-        flex-wrap:wrap;
-        gap:6px;
-      }
+    .text-content {
+      font-size: 14px;
+      color: var(--txt-light);
+      line-height: 1.6;
+      word-break: break-word;
+      flex: 1;
+      overflow-y: auto;
+      padding-right: 6px;
+    }
 
-      .rightGroup{
-        align-self:flex-end;
-      }
+    /* Custom Scrollbar for Text Content */
+    .text-content::-webkit-scrollbar { width: 4px; }
+    .text-content::-webkit-scrollbar-thumb { background: var(--stroke); border-radius: 4px; }
 
-      .pill{
-        font-size: 11px;
-        padding:4px 6px;
-      }
+    .footer {
+      border-top: 1px solid var(--stroke2);
+      padding-top: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
 
-      .content{
-        padding: 6px 10px 10px 10px;
-      }
+    .status-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      color: var(--muted);
+    }
 
-      .bigText{
-        font-size: 13px;
-      }
+    .statusDot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: rgba(var(--accent-rgb), 0.2);
+    }
 
-      .sidebar{
-        left:8px;
-        top:auto;
-        bottom:96px;
-        transform:none;
-      }
+    .statusDot.on {
+      background: var(--accent);
+      box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.6);
+    }
 
-      .sidebarBtn{
-        width:52px;
-        padding:8px 6px;
-      }
+    .statusDot.err {
+      background: #ff4d4d;
+      box-shadow: 0 0 8px rgba(255,77,77,0.5);
+    }
 
-      .orb{
-        right:14px;
-        bottom:14px;
-        transform: scale(0.92);
-      }
+    #debug {
+      opacity: 0.7;
+      font-size: 10px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: var(--muted);
     }
   </style>
 </head>
-
 <body>
 
 <audio id="tts" autoplay></audio>
 
+<!-- Translation Component Widget -->
 <div class="sidebar">
-  <button id="orbitSidebarBtn" class="sidebarBtn" type="button" title="Orbit Translator" aria-label="Orbit Translator">
-    <svg class="sidebarIcon" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <div class="header">
+    <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
       <circle cx="20" cy="24" r="10" stroke="currentColor" stroke-width="2" />
       <path d="M6 28c7-6 21-9 36-5" stroke="currentColor" stroke-width="2" opacity="0.7" />
       <circle cx="36" cy="14" r="3" fill="currentColor" opacity="0.7" />
     </svg>
-    <span>Orbit</span>
-  </button>
-</div>
+    Orbit Translator
+  </div>
 
-<div id="overlay" class="overlay">
-  <div class="topbar">
-    <div class="leftGroup">
-      <div class="pill">
-        <button id="toggleListenBtn" type="button" style="display:inline-flex;align-items:center;gap:8px;">
-          <span style="display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-              <path d="M4 5h7m-7 4h5m7-4h4m-4 0v14m0-14l-4 4m4-4l4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.92"/>
-              <path d="M5 19h6m-6 0v-4m0 4l4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.92"/>
-            </svg>
-          </span>
-          <span id="translatingLabel">Translating</span>
-        </button>
-      </div>
-
-      <div class="pill">
-        <select id="srcLang" aria-label="Source language" title="Source language"></select>
-      </div>
-
-      <div class="arrow">→</div>
-
-      <div class="pill">
-        <select id="tgtLang" aria-label="Target language" title="Target language"></select>
-        <span style="opacity:.75;font-size:10px;">▾</span>
-      </div>
+  <div class="control-group">
+    <div class="lang-field">
+      <label>Translate From</label>
+      <select id="srcLang"></select>
+    </div>
+    
+    <div class="lang-field">
+      <label>Translate To</label>
+      <select id="tgtLang"></select>
     </div>
 
-    <div class="rightGroup">
-      <button id="fsBtn" class="iconBtn" type="button" title="Fullscreen">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-          <path d="M9 4H4v5M15 4h5v5M9 20H4v-5M15 20h5v-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.92"/>
-        </svg>
-      </button>
-      <button id="closeBtn" class="iconBtn" type="button" title="Close">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-          <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.92"/>
-        </svg>
-      </button>
+    <button id="toggleListenBtn" class="action-btn" type="button">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <path d="M4 5h7m-7 4h5m7-4h4m-4 0v14m0-14l-4 4m4-4l4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M5 19h6m-6 0v-4m0 4l4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span id="translatingLabel">Start Listening</span>
+    </button>
+  </div>
+
+  <div class="viz-container">
+    <div class="viz-group in" data-viz="in">
+      <label>MIC</label>
+      <div class="orbBar"></div><div class="orbBar"></div><div class="orbBar"></div><div class="orbBar"></div>
+    </div>
+    <div class="viz-group out" data-viz="out">
+      <label>TTS</label>
+      <div class="orbBar"></div><div class="orbBar"></div><div class="orbBar"></div><div class="orbBar"></div>
     </div>
   </div>
 
-  <div class="content">
-    <div id="bigText" class="bigText">Tap “Translating” to start listening…</div>
-
-    <div class="subline">
-      <div style="display:flex;align-items:center;gap:8px;">
-        <span id="dot" class="statusDot"></span>
-        <span id="status">Idle</span>
-      </div>
-      <div id="debug" style="opacity:.85;text-align:right;max-width:55%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></div>
+  <!-- SPLIT CONTENT VIEW -->
+  <div class="split-content">
+    
+    <!-- Top Half: Transcription -->
+    <div class="text-panel">
+      <div class="panel-label">Original Transcription</div>
+      <div id="originalText" class="text-content">Ready. Tap "Start Listening" to begin...</div>
     </div>
-  </div>
 
-  <div class="chevronWrap">
-    <button id="chevBtn" class="chevronBtn" type="button">⌄</button>
+    <!-- Bottom Half: Translation -->
+    <div class="text-panel">
+      <div class="panel-label">Translation</div>
+      <div id="translatedText" class="text-content">Translation will appear here...</div>
+    </div>
+
+  </div>
+  
+  <div class="footer">
+    <div id="debug"></div>
+    <div class="status-row">
+      <span id="dot" class="statusDot"></span>
+      <span id="status">Idle</span>
+    </div>
   </div>
 </div>
-
-
 
 <script>
 /* =========================================================
-   1. Host Embedding
+   1. Cartesia TTS Engine (Queue System)
 ========================================================= */
-(() => {
-  const host = document.querySelector("[data-translate-overlay-host]");
-  const overlay = document.getElementById("overlay");
-  if (host) {
-    const cs = getComputedStyle(host);
-    if (cs.position === "static") host.style.position = "relative";
-    host.appendChild(overlay);
-    overlay.classList.add("in-host");
-  }
-  let embedded = false;
-  try {
-    embedded = window.self !== window.top;
-  } catch (_) {
-    embedded = true;
-  }
-  if (!host && embedded && overlay) {
-    document.body.classList.add("embedded");
-    overlay.classList.add("embedded");
-  }
-})();
-
-/* =========================================================
-   2. Orbit AI TTS Engine (Queue System)
-========================================================= */
-const ORBIT_TTS_CFG = {
-  endpoint: "/api/tts",
-  provider: "cartesia"
+const CARTESIA_CFG = {
+  endpoint: "https://api.cartesia.ai/tts/bytes",
+  apiKey: "sk_car_YfXP5EhCuwz6sdyGtjJaqX",
+  version: "2025-04-16",
+  model: "sonic-3",
+  voiceId: "9e8db62d-056f-47f3-b3b6-1b05767f9176" 
 };
 
-// Sonic-3 supported language codes (42)
+// Sonic-3 supported languages
 const CARTESIA_LANGS = new Set([
   "en","fr","de","es","pt","zh","ja","hi","it","ko","nl","pl","ru","sv","tr","tl",
   "bg","ro","ar","cs","el","fi","hr","ms","sk","da","ta","uk","hu","no","vi","bn",
@@ -493,34 +361,27 @@ const CARTESIA_LANGS = new Set([
 ]);
 
 const ttsAudio = document.getElementById("tts");
-let ttsQueue = [];
+let ttsQueue =[];
 let ttsBusy = false;
 
-/* =========================================================
-   ✅ ORIGINAL AUDIO DUCKING (20%) DURING TTS (Requested)
-   - Ducks all other <audio>/<video> elements except #tts
-   - Fast smooth fade down/up for clean transitions
-========================================================= */
+/* --- Audio Ducking --- */
 const DUCK_TARGET = 0.20;
 const DUCK_FADE_MS = 120;
 const RESTORE_FADE_MS = 160;
 let duckRefCount = 0;
-const duckStore = new Map(); // el -> { vol, muted }
-const duckAnim = new Map(); // el -> rAF id
+const duckStore = new Map();
+const duckAnim = new Map();
 
 function listOtherMediaEls() {
-  const all = Array.from(document.querySelectorAll("audio,video"));
-  return all.filter(el => el && el !== ttsAudio);
+  return Array.from(document.querySelectorAll("audio,video")).filter(el => el && el !== ttsAudio);
 }
 
 function rampVolume(el, to, duration) {
   if (!el || typeof el.volume !== "number") return;
   const from = el.volume;
   const target = Math.max(0, Math.min(1, to));
-  if (duckAnim.has(el)) {
-    cancelAnimationFrame(duckAnim.get(el));
-    duckAnim.delete(el);
-  }
+  if (duckAnim.has(el)) cancelAnimationFrame(duckAnim.get(el));
+  
   if (!isFinite(from) || duration <= 0 || Math.abs(from - target) < 0.001) {
     el.volume = target;
     return;
@@ -528,72 +389,44 @@ function rampVolume(el, to, duration) {
   const start = performance.now();
   const tick = (now) => {
     const t = Math.min(1, (now - start) / duration);
-    const eased = t * (2 - t); // ease-out for fast, smooth fade
-    try {
-      el.volume = from + (target - from) * eased;
-    } catch (_) {}
-    if (t < 1) {
-      duckAnim.set(el, requestAnimationFrame(tick));
-    } else {
-      duckAnim.delete(el);
-    }
+    try { el.volume = from + (target - from) * (t * (2 - t)); } catch (_) {}
+    if (t < 1) duckAnim.set(el, requestAnimationFrame(tick));
+    else duckAnim.delete(el);
   };
   duckAnim.set(el, requestAnimationFrame(tick));
 }
 
 function duckOtherMedia() {
-  duckRefCount++;
-  if (duckRefCount > 1) return; // already ducked
-
-  const els = listOtherMediaEls();
-  for (const el of els) {
+  if (++duckRefCount > 1) return;
+  listOtherMediaEls().forEach(el => {
     try {
-      if (!duckStore.has(el)) {
-        duckStore.set(el, {
-          vol: (typeof el.volume === "number") ? el.volume : 1,
-          muted: !!el.muted
-        });
-      }
-      // If it was muted, keep muted; else fade to 20%
-      if (!el.muted) {
-        const target = Math.min(DUCK_TARGET, (typeof el.volume === "number") ? el.volume : 1);
-        rampVolume(el, target, DUCK_FADE_MS);
-      }
+      if (!duckStore.has(el)) duckStore.set(el, { vol: el.volume ?? 1, muted: !!el.muted });
+      if (!el.muted) rampVolume(el, Math.min(DUCK_TARGET, el.volume ?? 1), DUCK_FADE_MS);
     } catch (_) {}
-  }
+  });
 }
 
 function restoreOtherMedia() {
   duckRefCount = Math.max(0, duckRefCount - 1);
   if (duckRefCount !== 0) return;
-
-  for (const [el, st] of duckStore.entries()) {
+  for (const[el, st] of duckStore.entries()) {
     try {
       el.muted = st.muted;
-      if (!el.muted && typeof st.vol === "number") {
-        rampVolume(el, st.vol, RESTORE_FADE_MS);
-      }
+      if (!el.muted && typeof st.vol === "number") rampVolume(el, st.vol, RESTORE_FADE_MS);
     } catch (_) {}
   }
   duckStore.clear();
 }
 
-/* =========================================================
-   Mobile Audio Unlock
-========================================================= */
+/* --- Mobile Audio Unlock --- */
 async function unlockAudioOnce() {
   try {
     const AC = window.AudioContext || window.webkitAudioContext;
     if (AC) {
-      const ctx = new AC();
-      await ctx.resume();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      gain.gain.value = 0.0001;
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.1);
+      const ctx = new AC(); await ctx.resume();
+      const osc = ctx.createOscillator(); const gain = ctx.createGain();
+      gain.gain.value = 0.0001; osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(); osc.stop(ctx.currentTime + 0.1);
     }
     startBackgroundLoop();
   } catch (_) {}
@@ -607,30 +440,23 @@ function startBackgroundLoop() {
     try {
       const AC = window.AudioContext || window.webkitAudioContext;
       if (AC) {
-        const ctx = new AC();
-        await ctx.resume();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        gain.gain.value = 0.00001;
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.01);
+        const ctx = new AC(); await ctx.resume();
+        const osc = ctx.createOscillator(); const gain = ctx.createGain();
+        gain.gain.value = 0.00001; osc.connect(gain); gain.connect(ctx.destination);
+        osc.start(); osc.stop(ctx.currentTime + 0.01);
       }
-    } catch(e) {}
+    } catch(_) {}
   }, 15000);
 }
 
-function normalizeSpaces(s) {
-  return (s || "").replace(/\s+/g, " ").trim();
-}
+function normalizeSpaces(s) { return (s || "").replace(/\s+/g, " ").trim(); }
+function baseLang(code) { return String(code || "").trim().replace(/_/g, "-").split("-")[0]; }
 
-// Split long text
 function splitSpeakSegments(text) {
   const t = normalizeSpaces(text);
-  if (!t) return [];
+  if (!t) return[];
   const parts = t.match(/[^.!?…]+[.!?…]*/g) || [t];
-  const out = [];
+  const out =[];
   for (const p of parts.map(s => s.trim()).filter(Boolean)) {
     if (p.length <= 180) out.push(p);
     else for (let i=0;i<p.length;i+=180) out.push(p.slice(i,i+180));
@@ -638,140 +464,126 @@ function splitSpeakSegments(text) {
   return out;
 }
 
-// Add to Queue
-function enqueueTTS(text, ttsLangCode) {
-  const segs = splitSpeakSegments(text);
-  if (!segs.length) return;
-  for (const s of segs) ttsQueue.push({ text: s, lang: ttsLangCode || null });
+function enqueueTTS(text, langCode) {
+  splitSpeakSegments(text).forEach(s => ttsQueue.push({ text: s, lang: langCode }));
   processTTSQueue().catch(()=>{});
 }
 
-// Fetch Bytes
-async function orbitBytes(transcript) {
-  const res = await fetch(ORBIT_TTS_CFG.endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text: transcript, provider: ORBIT_TTS_CFG.provider })
-  });
-
-  if (!res.ok) {
-    const txt = await res.text().catch(()=> "");
-    throw new Error(`Orbit TTS HTTP ${res.status}: ${txt || res.statusText}`);
+// Cartesia Payload Format
+async function cartesiaBytes(transcript, langCode) {
+  let bLang = baseLang(langCode) || 'en';
+  if (!CARTESIA_LANGS.has(bLang)) {
+    bLang = 'en'; // Cartesia fallback
   }
 
+  const res = await fetch(CARTESIA_CFG.endpoint, {
+    method: "POST",
+    headers: { 
+      "Content-Type": "application/json",
+      "X-API-Key": CARTESIA_CFG.apiKey,
+      "Cartesia-Version": CARTESIA_CFG.version
+    },
+    body: JSON.stringify({
+      model_id: CARTESIA_CFG.model,
+      transcript: transcript,
+      language: bLang, 
+      voice: {
+        mode: "id",
+        id: CARTESIA_CFG.voiceId
+      },
+      output_format: {
+        container: "wav",
+        encoding: "pcm_f32le",
+        sample_rate: 44100
+      },
+      speed: "normal",
+      generation_config: {
+        speed: 1,
+        volume: 1,
+        emotion: "content"
+      }
+    })
+  });
+  
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(`Cartesia HTTP ${res.status}: ${errorText}`);
+  }
+  
   return await res.blob();
 }
 
-// Play Blob and Return Success/Fail
 async function setAndPlayBlob(blob) {
   return new Promise((resolve) => {
     const url = URL.createObjectURL(blob);
     let done = false;
-
     ensureOutputAnalyser();
-    if (outputCtx && outputCtx.state === "suspended") {
-      outputCtx.resume().catch(() => {});
-    }
+    if (outputCtx && outputCtx.state === "suspended") outputCtx.resume().catch(() => {});
 
-    const cleanup = () => {
-      ttsAudio.removeEventListener("error", onErr);
-      ttsAudio.removeEventListener("canplaythrough", onCanPlay);
-    };
-
-    const onErr = () => {
-      if (done) return;
-      done = true;
-      cleanup();
-      resolve(false);
-    };
-
+    const cleanup = () => { ttsAudio.removeEventListener("error", onErr); ttsAudio.removeEventListener("canplaythrough", onCanPlay); };
+    const onErr = () => { if(done)return; done=true; cleanup(); resolve(false); };
     const onCanPlay = async () => {
-      if (done) return;
-      try {
-        await ttsAudio.play();
-        done = true;
-        cleanup();
-        resolve(true);
-      } catch {
-        done = true;
-        cleanup();
-        resolve(false);
-      }
+      if(done)return;
+      try { await ttsAudio.play(); done=true; cleanup(); resolve(true); } 
+      catch { done=true; cleanup(); resolve(false); }
     };
 
     ttsAudio.addEventListener("error", onErr, { once: true });
     ttsAudio.addEventListener("canplaythrough", onCanPlay, { once: true });
     ttsAudio.src = url;
 
-    setTimeout(() => {
-      if (done) return;
-      done = true;
-      cleanup();
-      resolve(ttsAudio.readyState >= 2);
-    }, 2000);
+    setTimeout(() => { if(!done) { done=true; cleanup(); resolve(ttsAudio.readyState >= 2); } }, 2000);
   });
 }
 
-// Wait for the 'ended' event
 function waitForEnded() {
   return new Promise(resolve => {
-    const onEnd = () => resolve();
-    ttsAudio.addEventListener("ended", onEnd, { once: true });
-
-    setTimeout(() => {
-      if(!ttsAudio.paused) return;
-      resolve();
-    }, (ttsAudio.duration * 1000) + 1000 || 2000);
+    ttsAudio.addEventListener("ended", () => resolve(), { once: true });
+    setTimeout(() => { if(ttsAudio.paused) resolve(); }, (ttsAudio.duration * 1000) + 1000 || 2000);
   });
 }
 
-// Main Play Function (never "skips turn": sequential + retries)
-async function speakText(text) {
+async function speakText(text, langCode) {
   duckOtherMedia();
   try {
-    const blob = await orbitBytes(text);
-    const ok = await setAndPlayBlob(blob);
-    if (!ok) throw new Error("Audio decode failed.");
+    const blob = await cartesiaBytes(text, langCode);
+    if (!(await setAndPlayBlob(blob))) throw new Error("Audio decode failed.");
     await waitForEnded();
   } finally {
     restoreOtherMedia();
   }
 }
 
-/*
-   ✅ STRICT QUEUE PROCESSOR
-*/
 async function processTTSQueue() {
   if (ttsBusy) return;
   ttsBusy = true;
-
   while (ttsQueue.length > 0) {
     const next = ttsQueue.shift();
     try {
       setStatus("Speaking…", "on");
-      await speakText(next.text);
-
+      await speakText(next.text, next.lang);
       await new Promise(r => setTimeout(r, 500));
     } catch (e) {
-      ui.debug.textContent = "TTS Err: " + String(e?.message || e);
+      ui.debug.textContent = "TTS Err: " + (e?.message || e);
       await new Promise(r => setTimeout(r, 500));
     }
   }
-
   ttsBusy = false;
   setStatus(listening ? "Listening…" : "Idle", listening ? "on" : "idle");
 }
 
+
 /* =========================================================
-   3. WebSpeech STT & Google Translate
+   2. Deepgram STT & Google Translate
 ========================================================= */
-const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-let recognizer = null;
+const DEEPGRAM_API_KEY = '2bc4eb7307a278639a16dd2f0b5d74298d68632b';
+let deepgramSocket = null;
+let mediaRecorder = null;
 let listening = false;
 
 const ui = {
-  overlay: document.getElementById("overlay"),
-  bigText: document.getElementById("bigText"),
+  originalText: document.getElementById("originalText"),
+  translatedText: document.getElementById("translatedText"),
   status: document.getElementById("status"),
   debug: document.getElementById("debug"),
   dot: document.getElementById("dot"),
@@ -779,11 +591,6 @@ const ui = {
   translatingLabel: document.getElementById("translatingLabel"),
   srcLang: document.getElementById("srcLang"),
   tgtLang: document.getElementById("tgtLang"),
-  fsBtn: document.getElementById("fsBtn"),
-  closeBtn: document.getElementById("closeBtn"),
-  chevBtn: document.getElementById("chevBtn"),
-  orb: document.getElementById("orb"),
-  orbitSidebarBtn: document.getElementById("orbitSidebarBtn")
 };
 
 function setStatus(text, mode="idle") {
@@ -793,30 +600,15 @@ function setStatus(text, mode="idle") {
   if (mode === "err") ui.dot.classList.add("err");
 }
 
-function setOverlayVisible(isVisible) {
-  if (!ui.overlay) return;
-  ui.overlay.hidden = !isVisible;
-}
-
-function toggleOverlayVisible() {
-  if (!ui.overlay) return;
-  setOverlayVisible(ui.overlay.hidden);
-}
+/* --- Visualizer Setup --- */
+let inputCtx, inputAnalyser, inputData, inputStream;
+let outputCtx, outputAnalyser, outputData, outputSource;
+let orbVizRAF;
 
 const orbViz = {
   inBars: Array.from(document.querySelectorAll('[data-viz="in"] .orbBar')),
   outBars: Array.from(document.querySelectorAll('[data-viz="out"] .orbBar'))
 };
-
-let inputCtx = null;
-let inputAnalyser = null;
-let inputData = null;
-let inputStream = null;
-let outputCtx = null;
-let outputAnalyser = null;
-let outputData = null;
-let outputSource = null;
-let orbVizRAF = null;
 
 function ensureOutputAnalyser() {
   if (outputCtx || !ttsAudio) return;
@@ -835,28 +627,20 @@ function ensureOutputAnalyser() {
 async function ensureInputAnalyser() {
   if (inputCtx) return;
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    inputStream = stream;
+    inputStream = await navigator.mediaDevices.getUserMedia({ audio: true });
     const AC = window.AudioContext || window.webkitAudioContext;
     inputCtx = new AC();
     inputAnalyser = inputCtx.createAnalyser();
     inputAnalyser.fftSize = 128;
     inputData = new Uint8Array(inputAnalyser.fftSize);
-    const source = inputCtx.createMediaStreamSource(stream);
-    source.connect(inputAnalyser);
+    inputCtx.createMediaStreamSource(inputStream).connect(inputAnalyser);
   } catch (_) {}
 }
 
 function stopInputAnalyser() {
-  if (inputStream) {
-    inputStream.getTracks().forEach((t) => t.stop());
-  }
-  inputStream = null;
-  inputAnalyser = null;
-  inputData = null;
-  if (inputCtx) {
-    inputCtx.close().catch(() => {});
-  }
+  if (inputStream) inputStream.getTracks().forEach((t) => t.stop());
+  inputStream = inputAnalyser = inputData = null;
+  if (inputCtx) inputCtx.close().catch(() => {});
   inputCtx = null;
 }
 
@@ -865,132 +649,61 @@ function getLevel(analyser, data) {
   analyser.getByteTimeDomainData(data);
   let sum = 0;
   for (let i = 0; i < data.length; i++) {
-    const v = (data[i] - 128) / 128;
-    sum += v * v;
+    const v = (data[i] - 128) / 128; sum += v * v;
   }
-  const rms = Math.sqrt(sum / data.length);
-  return Math.min(1, rms * 2.2);
+  return Math.min(1, Math.sqrt(sum / data.length) * 2.2);
 }
 
 function renderBars(bars, level) {
-  if (!bars || bars.length === 0) return;
-  const count = bars.length;
-  for (let i = 0; i < count; i++) {
-    const factor = (i + 1) / count;
-    const jitter = Math.random() * 2;
-    const h = 4 + (level * 18 * factor) + jitter;
-    bars[i].style.height = `${Math.round(h)}px`;
-  }
+  if (!bars.length) return;
+  bars.forEach((bar, i) => {
+    const factor = (i + 1) / bars.length;
+    bar.style.height = `${Math.round(4 + (level * 14 * factor) + (Math.random() * 2))}px`;
+  });
 }
 
 function startOrbVisualizer() {
   if (orbVizRAF) return;
   const loop = () => {
-    const inLevel = getLevel(inputAnalyser, inputData);
-    const outLevel = getLevel(outputAnalyser, outputData);
-    renderBars(orbViz.inBars, inLevel);
-    renderBars(orbViz.outBars, outLevel);
+    renderBars(orbViz.inBars, getLevel(inputAnalyser, inputData));
+    renderBars(orbViz.outBars, getLevel(outputAnalyser, outputData));
     orbVizRAF = requestAnimationFrame(loop);
   };
   loop();
 }
 
-
-function ensureRecognizer() {
-  if (!SpeechRecognition) {
-    setStatus("WebSpeech not supported.", "err");
-    ui.bigText.textContent = "Browser does not support WebSpeech STT.";
-    return false;
-  }
-
-  if (!recognizer) {
-    recognizer = new SpeechRecognition();
-    recognizer.continuous = true;
-    recognizer.interimResults = true;
-
-    recognizer.onstart = () => {
-      setStatus("Listening…", "on");
-      ui.translatingLabel.textContent = "Translating";
-    };
-
-    recognizer.onend = () => {
-      if (listening) {
-        setStatus("Restarting…", "on");
-        try { recognizer.start(); } catch(_) {}
-      } else {
-        setStatus("Idle");
-      }
-    };
-
-    recognizer.onerror = (e) => {
-      setStatus("Mic error: " + (e.error || "unknown"), "err");
-      listening = false;
-      try { recognizer.stop(); } catch(_) {}
-    };
-
-    recognizer.onresult = onSpeechResult;
-  }
-  return true;
-}
-
-/* =========================================================
-   4. Text Buffers & Translation
-========================================================= */
-let finalText = "";
-let interimText = "";
-let lastTranslatedKey = "";
-let translateTimer = null;
-
+/* --- Translating & Recognition --- */
+let finalText = "", interimText = "", lastTranslatedKey = "", translateTimer = null;
 let segChain = Promise.resolve();
 
-function currentFullText() {
-  return normalizeSpaces((finalText + " " + interimText).trim());
-}
-
-function baseLang(code) {
-  if (!code) return "";
-  const c = String(code).trim().replace(/_/g, "-");
-  return c.split("-")[0];
-}
+function currentFullText() { return normalizeSpaces((finalText + " " + interimText).trim()); }
 
 async function googleTranslateRaw(text, sl, tl) {
-  const q = encodeURIComponent(text);
-  const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${encodeURIComponent(sl)}&tl=${encodeURIComponent(tl)}&dt=t&q=${q}`;
-  const res = await fetch(url, { method: "GET" });
+  const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${encodeURIComponent(sl)}&tl=${encodeURIComponent(tl)}&dt=t&q=${encodeURIComponent(text)}`;
+  const res = await fetch(url);
   if (!res.ok) throw new Error("Translate HTTP " + res.status);
   const data = await res.json();
-  const chunks = (data && data[0]) ? data[0] : [];
-  return chunks.map(x => x && x[0] ? x[0] : "").join("").trim();
+  return ((data && data[0]) ? data[0] :[]).map(x => x && x[0] ? x[0] : "").join("").trim();
 }
 
 async function googleTranslate(text, sl, tl) {
-  const sl1 = (sl || "").trim();
-  const tl1 = (tl || "").trim();
-  const sl2 = baseLang(sl1);
-  const tl2 = baseLang(tl1);
+  const sl1 = (sl || "").trim(), tl1 = (tl || "").trim();
+  const sl2 = baseLang(sl1), tl2 = baseLang(tl1);
 
   try { return await googleTranslateRaw(text, sl1, tl1); } catch (_) {}
-
-  if (sl2 && sl2 !== sl1) {
-    try { return await googleTranslateRaw(text, sl2, tl1); } catch (_) {}
-  }
-  if (tl2 && tl2 !== tl1) {
-    try { return await googleTranslateRaw(text, sl1, tl2); } catch (_) {}
-  }
-  if (sl2 && tl2 && (sl2 !== sl1 || tl2 !== tl1)) {
-    return await googleTranslateRaw(text, sl2, tl2);
-  }
-
-  return await googleTranslateRaw(text, sl1, tl1);
+  if (sl2 && sl2 !== sl1) try { return await googleTranslateRaw(text, sl2, tl1); } catch (_) {}
+  if (tl2 && tl2 !== tl1) try { return await googleTranslateRaw(text, sl1, tl2); } catch (_) {}
+  return await googleTranslateRaw(text, sl2, tl2);
 }
 
 function scheduleTranslateNow(force=false) {
   if (translateTimer) clearTimeout(translateTimer);
   translateTimer = setTimeout(async () => {
-    const sl = getLangMeta(ui.srcLang).translate;
-    const tl = getLangMeta(ui.tgtLang).translate;
+    const sl = getLangMeta(ui.srcLang).translate, tl = getLangMeta(ui.tgtLang).translate;
     const full = currentFullText();
     if (!full) return;
+
+    if (finalText.length > 2000) finalText = finalText.slice(-1000); 
 
     const clipped = full.length > 520 ? full.slice(-520) : full;
     const key = `${sl}|${tl}|${clipped}`;
@@ -999,251 +712,144 @@ function scheduleTranslateNow(force=false) {
 
     try {
       setStatus("Translating…", "on");
-      const translated = await googleTranslate(clipped, sl, tl);
-      ui.bigText.textContent = translated || "…";
+      const translatedString = (await googleTranslate(clipped, sl, tl)) || "…";
+      
+      ui.translatedText.textContent = translatedString;
+      ui.translatedText.scrollTop = ui.translatedText.scrollHeight;
+      
       setStatus(listening ? "Listening…" : "Idle", listening ? "on" : "idle");
-    } catch (err) {
-      setStatus("Translate error.", "err");
-    }
+    } catch (err) { setStatus("Translate error.", "err"); }
   }, force ? 0 : 100);
 }
 
-async function translateAndSpeakSegment(finalSegment, sl, tl, ttsLang) {
-  const seg = normalizeSpaces(finalSegment);
-  if (!seg) return;
-  try {
-    const translatedSeg = await googleTranslate(seg, sl, tl);
-    if (translatedSeg) enqueueTTS(translatedSeg, ttsLang);
-  } catch (e) {
-    ui.debug.textContent = "Seg Trans Err: " + String(e?.message || e);
-  }
-}
-
-function onSpeechResult(event) {
-  let interim = "";
-  for (let i = event.resultIndex; i < event.results.length; i++) {
-    const r = event.results[i];
-    const t = r[0]?.transcript || "";
-    if (r.isFinal) {
-      const cleaned = normalizeSpaces(t);
-      if (cleaned) {
-        finalText = normalizeSpaces(finalText + " " + cleaned);
-
-        const src = getLangMeta(ui.srcLang);
-        const tgt = getLangMeta(ui.tgtLang);
-
-        segChain = segChain
-          .then(() => translateAndSpeakSegment(cleaned, src.translate, tgt.translate, tgt.cartesia))
-          .catch(() => {});
-      }
-    } else {
-      interim += t;
-    }
-  }
-  interimText = normalizeSpaces(interim);
-  const full = currentFullText();
-  ui.debug.textContent = full ? `Heard: ${full.slice(-90)}` : "";
-  scheduleTranslateNow(false);
-}
-
 /* =========================================================
-   5. Controls & Events
+   3. Actions & Languages (Deepgram Control)
 ========================================================= */
 async function startListening() {
-  if (!ensureRecognizer()) return;
   if (listening) return;
-
-  await unlockAudioOnce();
+  await unlockAudioOnce(); 
   await ensureInputAnalyser();
-
-  finalText = "";
-  interimText = "";
-  lastTranslatedKey = "";
-  ui.bigText.textContent = "Listening…";
-  setStatus("Requesting mic…", "on");
-
-  const src = getLangMeta(ui.srcLang);
-  recognizer.lang = src.speech;
-
+  
+  finalText = interimText = lastTranslatedKey = "";
+  
+  ui.originalText.textContent = "Connecting to Deepgram…";
+  ui.translatedText.textContent = "…";
+  
+  setStatus("Connecting…", "on");
+  
   listening = true;
+  ui.toggleListenBtn.classList.add("active");
+  ui.translatingLabel.textContent = "Stop Listening";
+  
   try {
-    recognizer.start();
-  } catch (e) {
-    try { recognizer.stop(); } catch(_) {}
-    setTimeout(() => {
-      try { recognizer.start(); } catch(err) {
-        setStatus("Mic fail", "err");
-        listening = false;
+    const langCode = getLangMeta(ui.srcLang).speech || "en-US";
+    
+    // As per snippet configuration request:
+    const wsUrl = `wss://api.deepgram.com/v1/listen?model=nova-3&language=${langCode}&smart_format=true&interim_results=true&endpointing=10`;
+    
+    deepgramSocket = new WebSocket(wsUrl,['token', DEEPGRAM_API_KEY]);
+    
+    deepgramSocket.onopen = () => {
+      setStatus("Listening…", "on");
+      ui.originalText.textContent = "Listening…";
+      
+      let mimeType = 'audio/webm';
+      if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'audio/mp4'; // fallback for Safari
+      if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = ''; // Let browser negotiate natively
+      
+      mediaRecorder = new MediaRecorder(inputStream, mimeType ? { mimeType } : undefined);
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0 && deepgramSocket && deepgramSocket.readyState === WebSocket.OPEN) {
+          deepgramSocket.send(e.data);
+        }
+      };
+      mediaRecorder.start(250);
+    };
+    
+    deepgramSocket.onmessage = (message) => {
+      const data = JSON.parse(message.data);
+      if (data.type === 'Results' && data.channel?.alternatives?.[0]) {
+        const transcript = data.channel.alternatives[0].transcript;
+        
+        if (data.is_final) {
+          const cleaned = normalizeSpaces(transcript);
+          if (cleaned) {
+            finalText = normalizeSpaces(finalText + " " + cleaned);
+            const src = getLangMeta(ui.srcLang), tgt = getLangMeta(ui.tgtLang);
+            segChain = segChain.then(async () => {
+              try {
+                const trans = await googleTranslate(cleaned, src.translate, tgt.translate);
+                if (trans) enqueueTTS(trans, tgt.cartesia);
+              } catch(e) { ui.debug.textContent = "Seg Trans Err: " + e; }
+            }).catch(() => {});
+          }
+          interimText = "";
+        } else {
+          interimText = normalizeSpaces(transcript);
+        }
+        
+        const full = currentFullText();
+        ui.originalText.textContent = full || "Listening...";
+        ui.originalText.scrollTop = ui.originalText.scrollHeight;
+        
+        scheduleTranslateNow(false);
       }
-    }, 250);
+    };
+    
+    deepgramSocket.onclose = () => {
+      if (listening) {
+        setStatus("Connection closed.", "err");
+        stopListening();
+      }
+    };
+    
+    deepgramSocket.onerror = (e) => {
+      console.error("Deepgram Error:", e);
+      setStatus("STT Error", "err");
+      stopListening();
+    };
+    
+  } catch (err) {
+    setStatus("Mic fail", "err");
+    stopListening();
   }
 }
 
 function stopListening() {
   listening = false;
+  ui.toggleListenBtn.classList.remove("active");
+  ui.translatingLabel.textContent = "Start Listening";
+  
+  if (mediaRecorder && mediaRecorder.state !== "inactive") {
+    try { mediaRecorder.stop(); } catch(_) {}
+  }
+  mediaRecorder = null;
+  
+  if (deepgramSocket) {
+    try { deepgramSocket.close(); } catch(_) {}
+  }
+  deepgramSocket = null;
+  
   stopInputAnalyser();
-  try { recognizer && recognizer.stop(); } catch(_) {}
   setStatus("Idle");
 }
 
-ui.toggleListenBtn.addEventListener("click", () => {
-  if (listening) stopListening();
-  else startListening();
-});
+ui.toggleListenBtn.addEventListener("click", () => listening ? stopListening() : startListening());
 
-ui.srcLang.addEventListener("change", () => {
-  if (recognizer) recognizer.lang = getLangMeta(ui.srcLang).speech;
-  scheduleTranslateNow(true);
+// Re-initiate connection when changing source language during an active session
+ui.srcLang.addEventListener("change", () => { 
+  if (listening) {
+    stopListening();
+    setTimeout(startListening, 300);
+  }
+  scheduleTranslateNow(true); 
 });
-
 ui.tgtLang.addEventListener("change", () => scheduleTranslateNow(true));
-ui.closeBtn.addEventListener("click", () => {
-  stopListening();
-  setOverlayVisible(false);
-});
-ui.chevBtn.addEventListener("click", () => ui.overlay.classList.toggle("collapsed"));
-ui.fsBtn.addEventListener("click", async () => {
-  try { document.fullscreenElement ? document.exitFullscreen() : ui.overlay.requestFullscreen(); } catch(_){}
-});
-
-if (ui.orbitSidebarBtn) {
-  ui.orbitSidebarBtn.addEventListener("click", () => {
-    toggleOverlayVisible();
-  });
-}
-
-if (ui.orb) {
-  let orbDragging = false;
-  let orbMoved = false;
-  let startX = 0;
-  let startY = 0;
-  let startLeft = 0;
-  let startTop = 0;
-
-  const setOrbPosition = (left, top) => {
-    const size = ui.orb.offsetWidth || 75;
-    const maxLeft = window.innerWidth - size;
-    const maxTop = window.innerHeight - size;
-    const nextLeft = Math.max(0, Math.min(left, maxLeft));
-    const nextTop = Math.max(0, Math.min(top, maxTop));
-    ui.orb.style.left = `${nextLeft}px`;
-    ui.orb.style.top = `${nextTop}px`;
-  };
-
-  const clampOrbToViewport = () => {
-    const rect = ui.orb.getBoundingClientRect();
-    setOrbPosition(rect.left, rect.top);
-  };
-
-  ui.orb.addEventListener("pointerdown", (e) => {
-    if (e.button && e.button !== 0) return;
-    const rect = ui.orb.getBoundingClientRect();
-    ui.orb.style.right = "auto";
-    ui.orb.style.bottom = "auto";
-    ui.orb.style.left = `${rect.left}px`;
-    ui.orb.style.top = `${rect.top}px`;
-    startLeft = rect.left;
-    startTop = rect.top;
-    startX = e.clientX;
-    startY = e.clientY;
-    orbDragging = true;
-    orbMoved = false;
-    ui.orb.classList.add("dragging");
-    ui.orb.setPointerCapture(e.pointerId);
-  });
-
-  ui.orb.addEventListener("pointermove", (e) => {
-    if (!orbDragging) return;
-    const dx = e.clientX - startX;
-    const dy = e.clientY - startY;
-    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) orbMoved = true;
-    setOrbPosition(startLeft + dx, startTop + dy);
-  });
-
-  const stopDrag = (e) => {
-    if (!orbDragging) return;
-    orbDragging = false;
-    ui.orb.classList.remove("dragging");
-    ui.orb.releasePointerCapture(e.pointerId);
-    if (!orbMoved) {
-      toggleOverlayVisible();
-    }
-  };
-
-  ui.orb.addEventListener("pointerup", stopDrag);
-  ui.orb.addEventListener("pointercancel", stopDrag);
-
-  ui.orb.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      toggleOverlayVisible();
-    }
-  });
-
-  clampOrbToViewport();
-  window.addEventListener("resize", clampOrbToViewport);
-}
 
 /* =========================================================
-   6. FULL Language + Dialect + Regional List (No Skips)
+   4. FULL Language + Dialect + Regional List
 ========================================================= */
-const VARIANTS = [
-  ["en-US","English (United States)","en-US","en-US","en"],
-  ["en-GB","English (United Kingdom)","en-GB","en-GB","en"],
-  ["en-AU","English (Australia)","en-AU","en-AU","en"],
-  ["en-CA","English (Canada)","en-CA","en-CA","en"],
-  ["en-NZ","English (New Zealand)","en-NZ","en-NZ","en"],
-  ["en-PH","English (Philippines)","en-PH","en-PH","en"],
-  ["en-ZA","English (South Africa)","en-ZA","en-ZA","en"],
-  ["en-IN","English (India)","en-IN","en-IN","en"],
-
-  ["nl-NL","Dutch (Netherlands)","nl","nl-NL","nl"],
-  ["nl-BE","Dutch (Belgium / Flemish)","nl-BE","nl-BE","nl"],
-
-  ["fr-FR","French (France)","fr-FR","fr-FR","fr"],
-  ["fr-CA","French (Canada)","fr-CA","fr-CA","fr"],
-  ["fr-CH","French (Switzerland)","fr-CH","fr-CH","fr"],
-
-  ["es-ES","Spanish (Spain)","es-ES","es-ES","es"],
-  ["es-MX","Spanish (Mexico)","es-MX","es-MX","es"],
-  ["es-US","Spanish (United States)","es-US","es-US","es"],
-  ["es-419","Spanish (Latin America)","es-419","es-419","es"],
-  ["es-AR","Spanish (Argentina)","es-AR","es-AR","es"],
-  ["es-CL","Spanish (Chile)","es-CL","es-CL","es"],
-  ["es-CO","Spanish (Colombia)","es-CO","es-CO","es"],
-  ["es-PE","Spanish (Peru)","es-PE","es-PE","es"],
-  ["es-VE","Spanish (Venezuela)","es-VE","es-VE","es"],
-  ["es-UY","Spanish (Uruguay)","es-UY","es-UY","es"],
-  ["es-EC","Spanish (Ecuador)","es-EC","es-EC","es"],
-  ["es-GT","Spanish (Guatemala)","es-GT","es-GT","es"],
-  ["es-HN","Spanish (Honduras)","es-HN","es-HN","es"],
-  ["es-NI","Spanish (Nicaragua)","es-NI","es-NI","es"],
-  ["es-PA","Spanish (Panama)","es-PA","es-PA","es"],
-  ["es-PY","Spanish (Paraguay)","es-PY","es-PY","es"],
-  ["es-PR","Spanish (Puerto Rico)","es-PR","es-PR","es"],
-  ["es-CR","Spanish (Costa Rica)","es-CR","es-CR","es"],
-  ["es-SV","Spanish (El Salvador)","es-SV","es-SV","es"],
-  ["es-HT","Spanish (Haiti)","es-HT","es-HT","es"],
-
-  ["pt-PT","Portuguese (Portugal)","pt-PT","pt-PT","pt"],
-  ["pt-BR","Portuguese (Brazil)","pt-BR","pt-BR","pt"],
-
-  ["zh-CN","Chinese (China / Simplified)","zh-CN","zh-CN","zh"],
-  ["zh-TW","Chinese (Taiwan / Traditional)","zh-TW","zh-TW","zh"],
-  ["zh-HK","Chinese (Hong Kong)","zh-HK","zh-HK","zh"],
-  ["zh-Hans","Chinese (Simplified Script)","zh-Hans","zh-Hans","zh"],
-  ["zh-Hant","Chinese (Traditional Script)","zh-Hant","zh-Hant","zh"],
-
-  ["ar-SA","Arabic (Saudi Arabia)","ar-SA","ar-SA","ar"],
-
-  ["bn-IN","Bengali (India)","bn-IN","bn-IN","bn"],
-  ["pa-PK","Punjabi (Pakistan)","pa-PK","pa-PK","pa"],
-
-  ["bs-Cyrl","Bosnian (Cyrillic)","bs-Cyrl","bs-Cyrl",""],
-  ["ms-Arab","Malay (Jawi)","ms-Arab","ms-Arab","ms"],
-  ["pa-Arab","Punjabi (Shahmukhi)","pa-Arab","pa-Arab","pa"],
-  ["mni-Mtei","Meiteilon (Manipuri, Meitei Mayek)","mni-Mtei","mni-Mtei",""],
-  ["nb-NO","Norwegian Bokmål (Norway)","nb","nb-NO","no"]
+const VARIANTS = [["en-US","English (United States)","en-US","en-US","en"],["en-GB","English (United Kingdom)","en-GB","en-GB","en"],["en-AU","English (Australia)","en-AU","en-AU","en"],["en-CA","English (Canada)","en-CA","en-CA","en"],["en-NZ","English (New Zealand)","en-NZ","en-NZ","en"],["en-PH","English (Philippines)","en-PH","en-PH","en"],["en-ZA","English (South Africa)","en-ZA","en-ZA","en"],["en-IN","English (India)","en-IN","en-IN","en"],["nl-NL","Dutch (Netherlands)","nl","nl-NL","nl"],["nl-BE","Dutch (Belgium / Flemish)","nl-BE","nl-BE","nl"],["fr-FR","French (France)","fr-FR","fr-FR","fr"],["fr-CA","French (Canada)","fr-CA","fr-CA","fr"],["fr-CH","French (Switzerland)","fr-CH","fr-CH","fr"],["es-ES","Spanish (Spain)","es-ES","es-ES","es"],["es-MX","Spanish (Mexico)","es-MX","es-MX","es"],["es-US","Spanish (United States)","es-US","es-US","es"],["es-419","Spanish (Latin America)","es-419","es-419","es"],["es-AR","Spanish (Argentina)","es-AR","es-AR","es"],["es-CL","Spanish (Chile)","es-CL","es-CL","es"],["es-CO","Spanish (Colombia)","es-CO","es-CO","es"],["es-PE","Spanish (Peru)","es-PE","es-PE","es"],["es-VE","Spanish (Venezuela)","es-VE","es-VE","es"],["es-UY","Spanish (Uruguay)","es-UY","es-UY","es"],["es-EC","Spanish (Ecuador)","es-EC","es-EC","es"],["es-GT","Spanish (Guatemala)","es-GT","es-GT","es"],["es-HN","Spanish (Honduras)","es-HN","es-HN","es"],["es-NI","Spanish (Nicaragua)","es-NI","es-NI","es"],["es-PA","Spanish (Panama)","es-PA","es-PA","es"],["es-PY","Spanish (Paraguay)","es-PY","es-PY","es"],["es-PR","Spanish (Puerto Rico)","es-PR","es-PR","es"],["es-CR","Spanish (Costa Rica)","es-CR","es-CR","es"],["es-SV","Spanish (El Salvador)","es-SV","es-SV","es"],["es-HT","Spanish (Haiti)","es-HT","es-HT","es"],["pt-PT","Portuguese (Portugal)","pt-PT","pt-PT","pt"],["pt-BR","Portuguese (Brazil)","pt-BR","pt-BR","pt"],["zh-CN","Chinese (China / Simplified)","zh-CN","zh-CN","zh"],["zh-TW","Chinese (Taiwan / Traditional)","zh-TW","zh-TW","zh"],["zh-HK","Chinese (Hong Kong)","zh-HK","zh-HK","zh"],["zh-Hans","Chinese (Simplified Script)","zh-Hans","zh-Hans","zh"],["zh-Hant","Chinese (Traditional Script)","zh-Hant","zh-Hant","zh"],["ar-SA","Arabic (Saudi Arabia)","ar-SA","ar-SA","ar"],["bn-IN","Bengali (India)","bn-IN","bn-IN","bn"],["pa-PK","Punjabi (Pakistan)","pa-PK","pa-PK","pa"],["bs-Cyrl","Bosnian (Cyrillic)","bs-Cyrl","bs-Cyrl",""],["ms-Arab","Malay (Jawi)","ms-Arab","ms-Arab","ms"],["pa-Arab","Punjabi (Shahmukhi)","pa-Arab","pa-Arab","pa"],["mni-Mtei","Meiteilon (Manipuri, Meitei Mayek)","mni-Mtei","mni-Mtei",""],["nb-NO","Norwegian Bokmål (Norway)","nb","nb-NO","no"]
 ];
 
 const BASE_LANGS = {
@@ -1296,25 +902,20 @@ function defaultCartesiaForTranslate(code) {
 }
 
 function escapeHtml(s) {
-  return String(s ?? "")
-    .replace(/&/g,"&amp;")
-    .replace(/</g,"&lt;")
-    .replace(/>/g,"&gt;")
-    .replace(/"/g,"&quot;")
-    .replace(/'/g,"&#39;");
+  return String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 }
 
 function populateLangs() {
-  const opts = [];
+  const opts =[];
 
-  for (const [id,label,translate,speech,cartesia] of VARIANTS) {
+  for (const[id,label,translate,speech,cartesia] of VARIANTS) {
     opts.push(
       `<option value="${escapeHtml(id)}" data-translate="${escapeHtml(translate)}" data-speech="${escapeHtml(speech)}" data-cartesia="${escapeHtml(cartesia || "")}">${escapeHtml(label)}</option>`
     );
   }
 
   const basePairs = Object.entries(BASE_LANGS).sort((a,b) => a[1].localeCompare(b[1]));
-  for (const [code, name] of basePairs) {
+  for (const[code, name] of basePairs) {
     if (!code) continue;
     const translate = code;
     const speech = defaultSpeechForTranslate(code);
@@ -1324,11 +925,9 @@ function populateLangs() {
     );
   }
 
-  ui.srcLang.innerHTML = opts.join("");
-  ui.tgtLang.innerHTML = opts.join("");
-
+  ui.srcLang.innerHTML = ui.tgtLang.innerHTML = opts.join("");
   ui.srcLang.value = "en-US";
-  ui.tgtLang.value = "nl-BE";
+  ui.tgtLang.value = "sv"; // Defaulting to Swedish based on the curl transcript
 }
 
 function getLangMeta(selectEl) {
