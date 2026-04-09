@@ -5,6 +5,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Orbit Translator</title>
+    
+    <!-- Firebase SDK (v8 compat for straightforward vanilla JS integration) -->
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-database-compat.js"></script>
+
     <style>
         :root {
             /* Theme derived from the provided UI image */
@@ -79,6 +84,16 @@
             gap: 14px;
         }
 
+        .row {
+            display: flex;
+            gap: 14px;
+            width: 100%;
+        }
+
+        .row > * {
+            flex: 1;
+        }
+
         .lang-field {
             display: flex;
             flex-direction: column;
@@ -92,7 +107,7 @@
             letter-spacing: 0.05em;
         }
 
-        select {
+        select, input[type="text"] {
             width: 100%;
             padding: 12px;
             background: var(--pill);
@@ -106,7 +121,11 @@
             transition: border-color 0.2s;
         }
 
-        select:focus {
+        input[type="text"] {
+            cursor: text;
+        }
+
+        select:focus, input[type="text"]:focus {
             border-color: var(--accent);
         }
 
@@ -224,6 +243,7 @@
             flex: 1;
             overflow-y: auto;
             padding-right: 6px;
+            white-space: pre-wrap; /* Allows formatting multiline speaker tags properly */
         }
 
         /* Custom Scrollbar for Text Content */
@@ -296,14 +316,28 @@
         </div>
 
         <div class="control-group">
-            <div class="lang-field">
-                <label>Translate From</label>
-                <select id="srcLang"></select>
+            <!-- Firebase ID Fields -->
+            <div class="row">
+                <div class="lang-field">
+                    <label>Room ID</label>
+                    <input type="text" id="roomIdInput" value="General">
+                </div>
+                <div class="lang-field">
+                    <label>User ID</label>
+                    <input type="text" id="userIdInput">
+                </div>
             </div>
 
-            <div class="lang-field">
-                <label>Translate To</label>
-                <select id="tgtLang"></select>
+            <div class="row">
+                <div class="lang-field">
+                    <label>Translate From</label>
+                    <select id="srcLang"></select>
+                </div>
+
+                <div class="lang-field">
+                    <label>Translate To</label>
+                    <select id="tgtLang"></select>
+                </div>
             </div>
 
             <button id="toggleListenBtn" class="action-btn" type="button">
@@ -362,6 +396,26 @@
 
     <script>
         /* =========================================================
+           0. Firebase Initialization
+        ========================================================= */
+        const firebaseConfig = {
+            apiKey: "AIzaSyDBFlUQBJvboua_021Vj5iFYrKEs8pxOew",
+            authDomain: "aitek2023-8f504.firebaseapp.com",
+            databaseURL: "https://aitek2023-8f504-default-rtdb.firebaseio.com",
+            projectId: "aitek2023-8f504",
+            storageBucket: "aitek2023-8f504.appspot.com",
+            messagingSenderId: "570516064142",
+            appId: "1:570516064142:web:8a403c708e9732625886df",
+            measurementId: "G-XF528QWWM6"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // Assign a random User ID on load
+        document.getElementById("userIdInput").value = "User_" + Math.floor(1000 + Math.random() * 9000);
+
+
+        /* =========================================================
            1. Cartesia TTS Engine (Queue System)
         ========================================================= */
         const CARTESIA_CFG = {
@@ -372,7 +426,6 @@
             voiceId: "9e8db62d-056f-47f3-b3b6-1b05767f9176"
         };
 
-        // Sonic-3 supported languages
         const CARTESIA_LANGS = new Set([
             "en", "fr", "de", "es", "pt", "zh", "ja", "hi", "it", "ko", "nl", "pl", "ru", "sv", "tr", "tl",
             "bg", "ro", "ar", "cs", "el", "fi", "hr", "ms", "sk", "da", "ta", "uk", "hu", "no", "vi", "bn",
@@ -380,10 +433,9 @@
         ]);
 
         const ttsAudio = document.getElementById("tts");
-        let ttsQueue = [];
+        let ttsQueue =[];
         let ttsBusy = false;
 
-        /* --- Audio Ducking --- */
         const DUCK_TARGET = 0.20;
         const DUCK_FADE_MS = 120;
         const RESTORE_FADE_MS = 160;
@@ -437,7 +489,6 @@
             duckStore.clear();
         }
 
-        /* --- Mobile Audio Unlock --- */
         async function unlockAudioOnce() {
             try {
                 const AC = window.AudioContext || window.webkitAudioContext;
@@ -471,45 +522,32 @@
         function normalizeSpaces(s) { return (s || "").replace(/\s+/g, " ").trim(); }
         function baseLang(code) { return String(code || "").trim().replace(/_/g, "-").split("-")[0]; }
 
-        /* Enhanced Sentence Segmentation with Semantic Boundaries */
         function splitSpeakSegments(text) {
             const t = normalizeSpaces(text);
-            if (!t) return [];
-
+            if (!t) return[];
             const segments = [];
-
-            // Split by sentence-ending punctuation with context awareness
             const sentences = t.split(/([.!?…]+\s*)/);
-
             let currentSegment = "";
 
             for (let i = 0; i < sentences.length; i++) {
                 const part = sentences[i].trim();
                 if (!part) continue;
 
-                // If it's punctuation, attach to previous segment
                 if (/^[.!?…]+$/.test(part)) {
                     currentSegment += part;
                     continue;
                 }
 
-                // Check if this part creates a complete thought
                 const testSegment = currentSegment + part;
-
-                // Split by clauses for long sentences
                 if (testSegment.length > 200) {
                     const clauses = splitByClauses(testSegment);
                     if (clauses.length > 1) {
-                        // Add completed clauses
                         for (let j = 0; j < clauses.length - 1; j++) {
                             const clause = clauses[j].trim();
-                            if (clause && clause.length > 10) {
-                                segments.push(clause);
-                            }
+                            if (clause && clause.length > 10) segments.push(clause);
                         }
                         currentSegment = clauses[clauses.length - 1];
                     } else {
-                        // Split by length as fallback
                         const chunks = splitByLength(testSegment, 180);
                         if (chunks.length > 1) {
                             segments.push(...chunks.slice(0, -1));
@@ -522,53 +560,35 @@
                     currentSegment = testSegment;
                 }
 
-                // If we have a complete sentence, add it
                 if (/[.!?…]$/.test(currentSegment) && currentSegment.length > 10) {
                     segments.push(currentSegment.trim());
                     currentSegment = "";
                 }
             }
-
-            // Add any remaining text
-            if (currentSegment.trim() && currentSegment.trim().length > 5) {
-                segments.push(currentSegment.trim());
-            }
-
+            if (currentSegment.trim() && currentSegment.trim().length > 5) segments.push(currentSegment.trim());
             return segments.filter(s => s && s.length > 3);
         }
 
         function splitByClauses(text) {
-            // Split by common clause separators while preserving semantic meaning
             const clauseSeparators = /[;:|，|。|！|？|;|:]/;
             const commaSeparators = /[,，]/;
-
-            // Try major separators first
             let parts = text.split(clauseSeparators);
-            if (parts.length === 1) {
-                // Try comma separators for longer text
-                if (text.length > 150) {
-                    parts = text.split(commaSeparators);
-                }
-            }
-
+            if (parts.length === 1 && text.length > 150) parts = text.split(commaSeparators);
             return parts.map(p => p.trim()).filter(p => p.length > 0);
         }
 
         function splitByLength(text, maxLength) {
-            const chunks = [];
+            const chunks =[];
             let current = "";
             const words = text.split(/\s+/);
-
             for (const word of words) {
                 const test = current + (current ? " " : "") + word;
-                if (test.length <= maxLength) {
-                    current = test;
-                } else {
+                if (test.length <= maxLength) current = test;
+                else {
                     if (current) chunks.push(current);
                     current = word;
                 }
             }
-
             if (current) chunks.push(current);
             return chunks;
         }
@@ -576,40 +596,21 @@
         function enqueueTTS(text, langCode, emotion = null) {
             const segments = splitSpeakSegments(text);
             const targetEmotion = emotion || currentEmotion;
-
             segments.forEach(s => {
-                ttsQueue.push({
-                    text: s,
-                    lang: langCode,
-                    emotion: targetEmotion,
-                    timestamp: Date.now()
-                });
+                ttsQueue.push({ text: s, lang: langCode, emotion: targetEmotion, timestamp: Date.now() });
             });
-
             processTTSQueue().catch(() => { });
         }
 
-        // Cartesia Payload Format with Emotion Support
         async function cartesiaBytes(transcript, langCode, emotion = "content") {
             let bLang = baseLang(langCode) || 'en';
-            if (!CARTESIA_LANGS.has(bLang)) {
-                bLang = 'en'; // Cartesia fallback
-            }
+            if (!CARTESIA_LANGS.has(bLang)) bLang = 'en';
 
-            // Map emotion to Cartesia-compatible values
             const emotionMap = {
-                'happy': 'happy',
-                'sad': 'sad',
-                'angry': 'angry',
-                'excited': 'excited',
-                'gentle': 'gentle',
-                'curious': 'curious',
-                'content': 'content'
+                'happy': 'happy', 'sad': 'sad', 'angry': 'angry', 'excited': 'excited',
+                'gentle': 'gentle', 'curious': 'curious', 'content': 'content'
             };
-
             const mappedEmotion = emotionMap[emotion] || 'content';
-
-            // Adjust voice parameters based on emotion
             const emotionParams = getEmotionVoiceParams(mappedEmotion);
 
             const res = await fetch(CARTESIA_CFG.endpoint, {
@@ -623,15 +624,8 @@
                     model_id: CARTESIA_CFG.model,
                     transcript: transcript,
                     language: bLang,
-                    voice: {
-                        mode: "id",
-                        id: CARTESIA_CFG.voiceId
-                    },
-                    output_format: {
-                        container: "wav",
-                        encoding: "pcm_f32le",
-                        sample_rate: 44100
-                    },
+                    voice: { mode: "id", id: CARTESIA_CFG.voiceId },
+                    output_format: { container: "wav", encoding: "pcm_f32le", sample_rate: 44100 },
                     speed: emotionParams.speed,
                     generation_config: {
                         speed: emotionParams.speed,
@@ -643,11 +637,7 @@
                 })
             });
 
-            if (!res.ok) {
-                const errorText = await res.text();
-                throw new Error(`Cartesia HTTP ${res.status}: ${errorText}`);
-            }
-
+            if (!res.ok) throw new Error(`Cartesia HTTP ${res.status}: ${await res.text()}`);
             return await res.blob();
         }
 
@@ -661,7 +651,6 @@
                 'curious': { speed: 1.05, volume: 1.1, pitch: 1.15, prosodySpeed: 1.1 },
                 'content': { speed: 1.0, volume: 1.0, pitch: 1.0, prosodySpeed: 1.0 }
             };
-
             return params[emotion] || params['content'];
         }
 
@@ -714,46 +703,26 @@
                 const next = ttsQueue.shift();
                 try {
                     setStatus("Speaking…", "on");
-
-                    // Use emotion from queue item or current detected emotion
                     const emotion = next.emotion || currentEmotion;
-
                     await speakText(next.text, next.lang, emotion);
 
-                    // Adaptive pause based on emotion and segment length
                     const pauseDuration = calculatePauseDuration(next.text, emotion);
                     await new Promise(r => setTimeout(r, pauseDuration));
-
                 } catch (e) {
                     ui.debug.textContent = "TTS Err: " + (e?.message || e);
                     await new Promise(r => setTimeout(r, 500));
                 }
             }
-
             ttsBusy = false;
             setStatus(listening ? "Listening…" : "Idle", listening ? "on" : "idle");
         }
 
         function calculatePauseDuration(text, emotion) {
-            let basePause = 300; // Base pause in ms
-
-            // Adjust pause based on text length
+            let basePause = 300;
             if (text.length > 100) basePause += 200;
             if (text.length > 200) basePause += 300;
-
-            // Adjust pause based on emotion
-            const emotionMultipliers = {
-                'excited': 0.7,    // Faster transitions for excitement
-                'angry': 0.8,      // Slightly faster for anger
-                'happy': 0.9,      // Slightly faster for happiness
-                'sad': 1.5,        // Longer pauses for sadness
-                'gentle': 1.3,      // Longer pauses for gentle speech
-                'curious': 1.0,     // Normal for curiosity
-                'content': 1.0      // Normal for content
-            };
-
-            const multiplier = emotionMultipliers[emotion] || 1.0;
-            return Math.round(basePause * multiplier);
+            const emotionMultipliers = { 'excited': 0.7, 'angry': 0.8, 'happy': 0.9, 'sad': 1.5, 'gentle': 1.3, 'curious': 1.0, 'content': 1.0 };
+            return Math.round(basePause * (emotionMultipliers[emotion] || 1.0));
         }
 
 
@@ -784,16 +753,14 @@
             if (mode === "err") ui.dot.classList.add("err");
         }
 
-        /* --- Visualizer Setup --- */
         let inputCtx, inputAnalyser, inputData, inputStream;
         let outputCtx, outputAnalyser, outputData, outputSource;
         let orbVizRAF;
 
-        /* --- Emotion Detection --- */
         let emotionAnalyser, emotionData;
         let currentEmotion = "content";
-        let emotionHistory = [];
-        const EMOTION_WINDOW = 3000; // 3 seconds of audio for emotion analysis
+        let emotionHistory =[];
+        const EMOTION_WINDOW = 3000;
 
         const orbViz = {
             inBars: Array.from(document.querySelectorAll('[data-viz="in"] .orbBar')),
@@ -824,7 +791,6 @@
                 inputAnalyser.fftSize = 128;
                 inputData = new Uint8Array(inputAnalyser.fftSize);
 
-                // Create emotion analyser with higher resolution
                 emotionAnalyser = inputCtx.createAnalyser();
                 emotionAnalyser.fftSize = 2048;
                 emotionAnalyser.smoothingTimeConstant = 0.8;
@@ -834,7 +800,6 @@
                 source.connect(inputAnalyser);
                 source.connect(emotionAnalyser);
 
-                // Start emotion detection
                 startEmotionDetection();
             } catch (_) { }
         }
@@ -844,7 +809,7 @@
             inputStream = inputAnalyser = inputData = emotionAnalyser = emotionData = null;
             if (inputCtx) inputCtx.close().catch(() => { });
             inputCtx = null;
-            emotionHistory = [];
+            emotionHistory =[];
             currentEmotion = "content";
         }
 
@@ -858,112 +823,72 @@
             return Math.min(1, Math.sqrt(sum / data.length) * 2.2);
         }
 
-        /* --- Emotion Detection Functions --- */
         function startEmotionDetection() {
             if (!emotionAnalyser) return;
-
             setInterval(() => {
                 if (!listening || !emotionAnalyser) return;
-
                 try {
                     emotionAnalyser.getFloatFrequencyData(emotionData);
                     const emotion = analyzeEmotion(emotionData);
-
-                    // Smooth emotion changes
                     emotionHistory.push({ emotion, timestamp: Date.now() });
                     emotionHistory = emotionHistory.filter(e => Date.now() - e.timestamp < EMOTION_WINDOW);
-
-                    if (emotionHistory.length > 0) {
-                        const emotions = emotionHistory.map(e => e.emotion);
-                        currentEmotion = getMostFrequent(emotions);
-                    }
+                    if (emotionHistory.length > 0) currentEmotion = getMostFrequent(emotionHistory.map(e => e.emotion));
                 } catch (_) { }
-            }, 500); // Analyze every 500ms
+            }, 500);
         }
 
         function analyzeEmotion(frequencyData) {
             if (!frequencyData || frequencyData.length === 0) return "content";
-
-            // Calculate audio features
             const features = extractAudioFeatures(frequencyData);
-
-            // Simple emotion classification based on audio features
-            if (features.energy > 0.7 && features.pitch > 0.6) {
-                return features.spectralCentroid > 0.7 ? "excited" : "happy";
-            } else if (features.energy > 0.5 && features.pitch < 0.4) {
-                return "sad";
-            } else if (features.energy > 0.6 && features.spectralCentroid < 0.4) {
-                return "angry";
-            } else if (features.energy < 0.3 && features.pitch > 0.5) {
-                return "gentle";
-            } else if (features.energy > 0.4 && features.pitchVariability > 0.6) {
-                return "curious";
-            }
-
-            return "content"; // Default emotion
+            if (features.energy > 0.7 && features.pitch > 0.6) return features.spectralCentroid > 0.7 ? "excited" : "happy";
+            else if (features.energy > 0.5 && features.pitch < 0.4) return "sad";
+            else if (features.energy > 0.6 && features.spectralCentroid < 0.4) return "angry";
+            else if (features.energy < 0.3 && features.pitch > 0.5) return "gentle";
+            else if (features.energy > 0.4 && features.pitchVariability > 0.6) return "curious";
+            return "content";
         }
 
         function extractAudioFeatures(frequencyData) {
-            // Energy (overall loudness)
             const energy = frequencyData.reduce((sum, val) => sum + Math.abs(val), 0) / frequencyData.length;
-
-            // Pitch estimation (fundamental frequency approximation)
             const pitch = estimatePitch(frequencyData);
-
-            // Spectral centroid (brightness of sound)
             const spectralCentroid = calculateSpectralCentroid(frequencyData);
-
-            // Pitch variability (for detecting curiosity/excitement)
             const pitchVariability = calculatePitchVariability(frequencyData);
-
             return {
-                energy: Math.min(1, energy * 10), // Normalize to 0-1
-                pitch: Math.min(1, pitch / 500), // Normalize assuming max pitch ~500Hz
+                energy: Math.min(1, energy * 10),
+                pitch: Math.min(1, pitch / 500),
                 spectralCentroid: Math.min(1, spectralCentroid / frequencyData.length),
                 pitchVariability: Math.min(1, pitchVariability)
             };
         }
 
         function estimatePitch(frequencyData) {
-            // Simple pitch estimation using zero-crossing rate approximation
             let crossings = 0;
-            for (let i = 1; i < frequencyData.length; i++) {
-                if ((frequencyData[i - 1] >= 0) !== (frequencyData[i] >= 0)) {
-                    crossings++;
-                }
-            }
-            return (crossings / 2) * (44100 / frequencyData.length); // Approximate Hz
+            for (let i = 1; i < frequencyData.length; i++) if ((frequencyData[i - 1] >= 0) !== (frequencyData[i] >= 0)) crossings++;
+            return (crossings / 2) * (44100 / frequencyData.length);
         }
 
         function calculateSpectralCentroid(frequencyData) {
-            let weightedSum = 0;
-            let magnitudeSum = 0;
-
+            let weightedSum = 0, magnitudeSum = 0;
             for (let i = 0; i < frequencyData.length; i++) {
                 const magnitude = Math.abs(frequencyData[i]);
                 weightedSum += i * magnitude;
                 magnitudeSum += magnitude;
             }
-
             return magnitudeSum > 0 ? weightedSum / magnitudeSum : 0;
         }
 
         function calculatePitchVariability(frequencyData) {
-            // Calculate variance in frequency content
             const mean = frequencyData.reduce((sum, val) => sum + Math.abs(val), 0) / frequencyData.length;
             const variance = frequencyData.reduce((sum, val) => {
                 const diff = Math.abs(val) - mean;
                 return sum + diff * diff;
             }, 0) / frequencyData.length;
-
             return Math.sqrt(variance);
         }
 
         function getMostFrequent(arr) {
             const counts = {};
-            for (const item of arr) {
-                counts[item] = (counts[item] || 0) + 1;
-            }
+            for (const item of arr) counts[item] = (counts[item] || 0) + 1;
             return Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
         }
 
@@ -989,7 +914,12 @@
         let finalText = "", interimText = "", lastTranslatedKey = "", translateTimer = null;
         let segChain = Promise.resolve();
 
-        function currentFullText() { return normalizeSpaces((finalText + " " + interimText).trim()); }
+        // Modified full text to include the active speaker's tag
+        function currentFullText() {
+            const currentUser = document.getElementById("userIdInput").value || "Anonymous";
+            const currentInterim = interimText ? (finalText ? "\n" : "") + `[${currentUser}]: ${interimText}` : "";
+            return (finalText + currentInterim).trim();
+        }
 
         async function googleTranslateRaw(text, sl, tl) {
             const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${encodeURIComponent(sl)}&tl=${encodeURIComponent(tl)}&dt=t&q=${encodeURIComponent(text)}`;
@@ -1002,7 +932,6 @@
         async function googleTranslate(text, sl, tl) {
             const sl1 = (sl || "").trim(), tl1 = (tl || "").trim();
             const sl2 = baseLang(sl1), tl2 = baseLang(tl1);
-
             try { return await googleTranslateRaw(text, sl1, tl1); } catch (_) { }
             if (sl2 && sl2 !== sl1) try { return await googleTranslateRaw(text, sl2, tl1); } catch (_) { }
             if (tl2 && tl2 !== tl1) try { return await googleTranslateRaw(text, sl1, tl2); } catch (_) { }
@@ -1013,18 +942,29 @@
             if (translateTimer) clearTimeout(translateTimer);
             translateTimer = setTimeout(async () => {
                 const sl = getLangMeta(ui.srcLang).translate, tl = getLangMeta(ui.tgtLang).translate;
-                const full = currentFullText();
+                let full = currentFullText();
                 if (!full) return;
 
-                if (finalText.length > 2000) finalText = finalText.slice(-1000);
+                // Slice safely to preserve speaker tags per line
+                if (finalText.length > 2000) {
+                    const lines = finalText.split('\n');
+                    finalText = lines.slice(-20).join('\n');
+                    full = currentFullText();
+                }
 
-                const clipped = full.length > 520 ? full.slice(-520) : full;
+                let clipped = full;
+                const fullLines = full.split('\n');
+                if (fullLines.length > 20) {
+                    clipped = fullLines.slice(-20).join('\n');
+                }
+
                 const key = `${sl}|${tl}|${clipped}`;
                 if (!force && key === lastTranslatedKey) return;
                 lastTranslatedKey = key;
 
                 try {
                     setStatus("Translating…", "on");
+                    // Translate entire block containing tags
                     const translatedString = (await googleTranslate(clipped, sl, tl)) || "…";
 
                     ui.translatedText.textContent = translatedString;
@@ -1035,19 +975,14 @@
             }, force ? 0 : 100);
         }
 
-        /* =========================================================
-           3. Actions & Languages (Deepgram Control)
-        ========================================================= */
         async function startListening() {
             if (listening) return;
             await unlockAudioOnce();
             await ensureInputAnalyser();
 
             finalText = interimText = lastTranslatedKey = "";
-
             ui.originalText.textContent = "Connecting to Deepgram…";
             ui.translatedText.textContent = "…";
-
             setStatus("Connecting…", "on");
 
             listening = true;
@@ -1056,8 +991,6 @@
 
             try {
                 const langCode = getLangMeta(ui.srcLang).speech || "en-US";
-
-                // As per snippet configuration request:
                 const wsUrl = `wss://api.deepgram.com/v1/listen?model=nova-3&language=${langCode}&smart_format=true&interim_results=true&endpointing=10`;
 
                 deepgramSocket = new WebSocket(wsUrl, ['token', DEEPGRAM_API_KEY]);
@@ -1067,8 +1000,8 @@
                     ui.originalText.textContent = "Listening…";
 
                     let mimeType = 'audio/webm';
-                    if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'audio/mp4'; // fallback for Safari
-                    if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = ''; // Let browser negotiate natively
+                    if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'audio/mp4'; 
+                    if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = ''; 
 
                     mediaRecorder = new MediaRecorder(inputStream, mimeType ? { mimeType } : undefined);
                     mediaRecorder.ondataavailable = (e) => {
@@ -1087,10 +1020,25 @@
                         if (data.is_final) {
                             const cleaned = normalizeSpaces(transcript);
                             if (cleaned) {
-                                finalText = normalizeSpaces(finalText + " " + cleaned);
+                                const currentUser = document.getElementById("userIdInput").value || "Anonymous";
+                                const currentRoom = document.getElementById("roomIdInput").value || "General";
+
+                                // 1. Save Transcription directly to Firebase (Realtime Database)
+                                database.ref(`rooms/${currentRoom}/transcripts`).push({
+                                    roomId: currentRoom,
+                                    userId: currentUser,
+                                    text: cleaned,
+                                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                                });
+
+                                // 2. Add Speakers Tag to final text UI locally
+                                const taggedCleaned = `[${currentUser}]: ${cleaned}`;
+                                finalText = (finalText ? finalText + "\n" : "") + taggedCleaned;
+
                                 const src = getLangMeta(ui.srcLang), tgt = getLangMeta(ui.tgtLang);
                                 segChain = segChain.then(async () => {
                                     try {
+                                        // Translate *only* the raw dialogue so the TTS AI doesn't literally say "Bracket Username..."
                                         const trans = await googleTranslate(cleaned, src.translate, tgt.translate);
                                         if (trans) enqueueTTS(trans, tgt.cartesia, currentEmotion);
                                     } catch (e) { ui.debug.textContent = "Seg Trans Err: " + e; }
@@ -1149,7 +1097,6 @@
 
         ui.toggleListenBtn.addEventListener("click", () => listening ? stopListening() : startListening());
 
-        // Re-initiate connection when changing source language during an active session
         ui.srcLang.addEventListener("change", () => {
             if (listening) {
                 stopListening();
@@ -1162,8 +1109,7 @@
         /* =========================================================
            4. FULL Language + Dialect + Regional List
         ========================================================= */
-        const VARIANTS = [["en-US", "English (United States)", "en-US", "en-US", "en"], ["en-GB", "English (United Kingdom)", "en-GB", "en-GB", "en"], ["en-AU", "English (Australia)", "en-AU", "en-AU", "en"], ["en-CA", "English (Canada)", "en-CA", "en-CA", "en"], ["en-NZ", "English (New Zealand)", "en-NZ", "en-NZ", "en"], ["en-PH", "English (Philippines)", "en-PH", "en-PH", "en"], ["en-ZA", "English (South Africa)", "en-ZA", "en-ZA", "en"], ["en-IN", "English (India)", "en-IN", "en-IN", "en"], ["nl-NL", "Dutch (Netherlands)", "nl", "nl-NL", "nl"], ["nl-BE", "Dutch (Belgium / Flemish)", "nl-BE", "nl-BE", "nl"], ["fr-FR", "French (France)", "fr-FR", "fr-FR", "fr"], ["fr-CA", "French (Canada)", "fr-CA", "fr-CA", "fr"], ["fr-CH", "French (Switzerland)", "fr-CH", "fr-CH", "fr"], ["es-ES", "Spanish (Spain)", "es-ES", "es-ES", "es"], ["es-MX", "Spanish (Mexico)", "es-MX", "es-MX", "es"], ["es-US", "Spanish (United States)", "es-US", "es-US", "es"], ["es-419", "Spanish (Latin America)", "es-419", "es-419", "es"], ["es-AR", "Spanish (Argentina)", "es-AR", "es-AR", "es"], ["es-CL", "Spanish (Chile)", "es-CL", "es-CL", "es"], ["es-CO", "Spanish (Colombia)", "es-CO", "es-CO", "es"], ["es-PE", "Spanish (Peru)", "es-PE", "es-PE", "es"], ["es-VE", "Spanish (Venezuela)", "es-VE", "es-VE", "es"], ["es-UY", "Spanish (Uruguay)", "es-UY", "es-UY", "es"], ["es-EC", "Spanish (Ecuador)", "es-EC", "es-EC", "es"], ["es-GT", "Spanish (Guatemala)", "es-GT", "es-GT", "es"], ["es-HN", "Spanish (Honduras)", "es-HN", "es-HN", "es"], ["es-NI", "Spanish (Nicaragua)", "es-NI", "es-NI", "es"], ["es-PA", "Spanish (Panama)", "es-PA", "es-PA", "es"], ["es-PY", "Spanish (Paraguay)", "es-PY", "es-PY", "es"], ["es-PR", "Spanish (Puerto Rico)", "es-PR", "es-PR", "es"], ["es-CR", "Spanish (Costa Rica)", "es-CR", "es-CR", "es"], ["es-SV", "Spanish (El Salvador)", "es-SV", "es-SV", "es"], ["es-HT", "Spanish (Haiti)", "es-HT", "es-HT", "es"], ["pt-PT", "Portuguese (Portugal)", "pt-PT", "pt-PT", "pt"], ["pt-BR", "Portuguese (Brazil)", "pt-BR", "pt-BR", "pt"], ["zh-CN", "Chinese (China / Simplified)", "zh-CN", "zh-CN", "zh"], ["zh-TW", "Chinese (Taiwan / Traditional)", "zh-TW", "zh-TW", "zh"], ["zh-HK", "Chinese (Hong Kong)", "zh-HK", "zh-HK", "zh"], ["zh-Hans", "Chinese (Simplified Script)", "zh-Hans", "zh-Hans", "zh"], ["zh-Hant", "Chinese (Traditional Script)", "zh-Hant", "zh-Hant", "zh"], ["ar-SA", "Arabic (Saudi Arabia)", "ar-SA", "ar-SA", "ar"], ["bn-IN", "Bengali (India)", "bn-IN", "bn-IN", "bn"], ["pa-PK", "Punjabi (Pakistan)", "pa-PK", "pa-PK", "pa"], ["bs-Cyrl", "Bosnian (Cyrillic)", "bs-Cyrl", "bs-Cyrl", ""], ["ms-Arab", "Malay (Jawi)", "ms-Arab", "ms-Arab", "ms"], ["pa-Arab", "Punjabi (Shahmukhi)", "pa-Arab", "pa-Arab", "pa"], ["mni-Mtei", "Meiteilon (Manipuri, Meitei Mayek)", "mni-Mtei", "mni-Mtei", ""], ["nb-NO", "Norwegian Bokmål (Norway)", "nb", "nb-NO", "no"]
-        ];
+        const VARIANTS = [["en-US", "English (United States)", "en-US", "en-US", "en"],["en-GB", "English (United Kingdom)", "en-GB", "en-GB", "en"], ["en-AU", "English (Australia)", "en-AU", "en-AU", "en"], ["en-CA", "English (Canada)", "en-CA", "en-CA", "en"],["en-NZ", "English (New Zealand)", "en-NZ", "en-NZ", "en"],["en-PH", "English (Philippines)", "en-PH", "en-PH", "en"],["en-ZA", "English (South Africa)", "en-ZA", "en-ZA", "en"],["en-IN", "English (India)", "en-IN", "en-IN", "en"],["nl-NL", "Dutch (Netherlands)", "nl", "nl-NL", "nl"],["nl-BE", "Dutch (Belgium / Flemish)", "nl-BE", "nl-BE", "nl"],["fr-FR", "French (France)", "fr-FR", "fr-FR", "fr"],["fr-CA", "French (Canada)", "fr-CA", "fr-CA", "fr"],["fr-CH", "French (Switzerland)", "fr-CH", "fr-CH", "fr"],["es-ES", "Spanish (Spain)", "es-ES", "es-ES", "es"],["es-MX", "Spanish (Mexico)", "es-MX", "es-MX", "es"],["es-US", "Spanish (United States)", "es-US", "es-US", "es"],["es-419", "Spanish (Latin America)", "es-419", "es-419", "es"],["es-AR", "Spanish (Argentina)", "es-AR", "es-AR", "es"],["es-CL", "Spanish (Chile)", "es-CL", "es-CL", "es"],["es-CO", "Spanish (Colombia)", "es-CO", "es-CO", "es"],["es-PE", "Spanish (Peru)", "es-PE", "es-PE", "es"],["es-VE", "Spanish (Venezuela)", "es-VE", "es-VE", "es"],["es-UY", "Spanish (Uruguay)", "es-UY", "es-UY", "es"],["es-EC", "Spanish (Ecuador)", "es-EC", "es-EC", "es"],["es-GT", "Spanish (Guatemala)", "es-GT", "es-GT", "es"],["es-HN", "Spanish (Honduras)", "es-HN", "es-HN", "es"],["es-NI", "Spanish (Nicaragua)", "es-NI", "es-NI", "es"],["es-PA", "Spanish (Panama)", "es-PA", "es-PA", "es"],["es-PY", "Spanish (Paraguay)", "es-PY", "es-PY", "es"],["es-PR", "Spanish (Puerto Rico)", "es-PR", "es-PR", "es"],["es-CR", "Spanish (Costa Rica)", "es-CR", "es-CR", "es"],["es-SV", "Spanish (El Salvador)", "es-SV", "es-SV", "es"],["es-HT", "Spanish (Haiti)", "es-HT", "es-HT", "es"],["pt-PT", "Portuguese (Portugal)", "pt-PT", "pt-PT", "pt"],["pt-BR", "Portuguese (Brazil)", "pt-BR", "pt-BR", "pt"],["zh-CN", "Chinese (China / Simplified)", "zh-CN", "zh-CN", "zh"],["zh-TW", "Chinese (Taiwan / Traditional)", "zh-TW", "zh-TW", "zh"],["zh-HK", "Chinese (Hong Kong)", "zh-HK", "zh-HK", "zh"],["zh-Hans", "Chinese (Simplified Script)", "zh-Hans", "zh-Hans", "zh"],["zh-Hant", "Chinese (Traditional Script)", "zh-Hant", "zh-Hant", "zh"],["ar-SA", "Arabic (Saudi Arabia)", "ar-SA", "ar-SA", "ar"],["bn-IN", "Bengali (India)", "bn-IN", "bn-IN", "bn"],["pa-PK", "Punjabi (Pakistan)", "pa-PK", "pa-PK", "pa"],["bs-Cyrl", "Bosnian (Cyrillic)", "bs-Cyrl", "bs-Cyrl", ""],["ms-Arab", "Malay (Jawi)", "ms-Arab", "ms-Arab", "ms"],["pa-Arab", "Punjabi (Shahmukhi)", "pa-Arab", "pa-Arab", "pa"],["mni-Mtei", "Meiteilon (Manipuri, Meitei Mayek)", "mni-Mtei", "mni-Mtei", ""],["nb-NO", "Norwegian Bokmål (Norway)", "nb", "nb-NO", "no"]];
 
         const BASE_LANGS = {
             "ab": "Abkhaz", "ace": "Acehnese", "ach": "Acholi", "af": "Afrikaans", "sq": "Albanian", "alz": "Alur", "am": "Amharic", "ar": "Arabic",
@@ -1194,7 +1140,6 @@
         function defaultSpeechForTranslate(code) {
             const c = String(code || "").trim().replace(/_/g, "-");
             const b = baseLang(c);
-
             if (c === "fil" || c === "tl") return "fil-PH";
             if (b === "en") return c.includes("-") ? c : "en-US";
             if (b === "fr") return c.includes("-") ? c : "fr-FR";
@@ -1219,38 +1164,26 @@
         }
 
         function populateLangs() {
-            const opts = [];
-
+            const opts =[];
             for (const [id, label, translate, speech, cartesia] of VARIANTS) {
-                opts.push(
-                    `<option value="${escapeHtml(id)}" data-translate="${escapeHtml(translate)}" data-speech="${escapeHtml(speech)}" data-cartesia="${escapeHtml(cartesia || "")}">${escapeHtml(label)}</option>`
-                );
+                opts.push(`<option value="${escapeHtml(id)}" data-translate="${escapeHtml(translate)}" data-speech="${escapeHtml(speech)}" data-cartesia="${escapeHtml(cartesia || "")}">${escapeHtml(label)}</option>`);
             }
-
             const basePairs = Object.entries(BASE_LANGS).sort((a, b) => a[1].localeCompare(b[1]));
             for (const [code, name] of basePairs) {
                 if (!code) continue;
-                const translate = code;
-                const speech = defaultSpeechForTranslate(code);
-                const cartesia = defaultCartesiaForTranslate(code);
-                opts.push(
-                    `<option value="${escapeHtml(code)}" data-translate="${escapeHtml(translate)}" data-speech="${escapeHtml(speech)}" data-cartesia="${escapeHtml(cartesia)}">${escapeHtml(name)} (${escapeHtml(code)})</option>`
-                );
+                opts.push(`<option value="${escapeHtml(code)}" data-translate="${escapeHtml(code)}" data-speech="${escapeHtml(defaultSpeechForTranslate(code))}" data-cartesia="${escapeHtml(defaultCartesiaForTranslate(code))}">${escapeHtml(name)} (${escapeHtml(code)})</option>`);
             }
-
             ui.srcLang.innerHTML = ui.tgtLang.innerHTML = opts.join("");
             ui.srcLang.value = "en-US";
-            ui.tgtLang.value = "sv"; // Defaulting to Swedish based on the curl transcript
+            ui.tgtLang.value = "sv";
         }
 
         function getLangMeta(selectEl) {
             const opt = selectEl.selectedOptions && selectEl.selectedOptions[0];
             const value = selectEl.value || "en-US";
-
             const translate = (opt && opt.dataset && opt.dataset.translate) ? opt.dataset.translate : value;
             const speech = (opt && opt.dataset && opt.dataset.speech) ? opt.dataset.speech : defaultSpeechForTranslate(value);
             const cartesia = (opt && opt.dataset && opt.dataset.cartesia) ? opt.dataset.cartesia : defaultCartesiaForTranslate(value);
-
             return { value, translate, speech, cartesia };
         }
 
