@@ -5,18 +5,17 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Orbit Translator</title>
-    
+
     <!-- Firebase SDK (v8 compat for straightforward vanilla JS integration) -->
     <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-database-compat.js"></script>
 
     <style>
         :root {
-            /* Theme derived from the provided UI image */
             --bg: #0f0f0f;
             --bg-panel: #161616;
             --accent: #dca83a;
-            /* Yellow/Gold from the Send button */
             --accent-rgb: 220, 168, 58;
 
             --txt: #f0f0f0;
@@ -27,7 +26,6 @@
             --pill: #111111;
 
             --radius: 12px;
-            /* Smoother, rounder edges matching the image */
             --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
         }
 
@@ -62,7 +60,7 @@
         .header {
             display: flex;
             align-items: center;
-            gap: 12px;
+            justify-content: space-between;
             font-size: 16px;
             font-weight: bold;
             letter-spacing: 0.05em;
@@ -71,9 +69,29 @@
             border-bottom: 1px solid var(--stroke2);
         }
 
-        .header svg {
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header svg.logo-icon {
             width: 24px;
             height: 24px;
+            color: var(--accent);
+        }
+
+        .history-btn {
+            color: var(--muted);
+            transition: color 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .history-btn:hover {
             color: var(--accent);
         }
 
@@ -125,11 +143,17 @@
             cursor: text;
         }
 
-        select:focus, input[type="text"]:focus {
+        input[readonly] {
+            cursor: not-allowed;
+            opacity: 0.6;
+            background: #0a0a0a;
+        }
+
+        select:focus, input[type="text"]:focus:not([readonly]) {
             border-color: var(--accent);
         }
 
-        /* Main Action Button (Styled like the Send button) */
+        /* Main Action Button */
         .action-btn {
             width: 100%;
             padding: 14px;
@@ -141,7 +165,6 @@
             border: 1px solid var(--accent);
             border-radius: var(--radius);
             color: #111111;
-            /* Dark text for high contrast on yellow */
             font-family: var(--mono);
             font-size: 14px;
             font-weight: bold;
@@ -155,7 +178,6 @@
             border-color: #eac055;
         }
 
-        /* When active (Listening), invert the style */
         .action-btn.active {
             background: transparent;
             border-color: var(--accent);
@@ -243,10 +265,9 @@
             flex: 1;
             overflow-y: auto;
             padding-right: 6px;
-            white-space: pre-wrap; /* Allows formatting multiline speaker tags properly */
+            white-space: pre-wrap; 
         }
 
-        /* Custom Scrollbar for Text Content */
         .text-content::-webkit-scrollbar {
             width: 4px;
         }
@@ -307,12 +328,21 @@
     <!-- Translation Panel -->
     <div class="sidebar">
         <div class="header">
-            <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
-                <circle cx="20" cy="24" r="10" stroke="currentColor" stroke-width="2" />
-                <path d="M6 28c7-6 21-9 36-5" stroke="currentColor" stroke-width="2" opacity="0.7" />
-                <circle cx="36" cy="14" r="3" fill="currentColor" opacity="0.7" />
-            </svg>
-            Orbit Translator
+            <div class="header-left">
+                <svg class="logo-icon" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+                    <circle cx="20" cy="24" r="10" stroke="currentColor" stroke-width="2" />
+                    <path d="M6 28c7-6 21-9 36-5" stroke="currentColor" stroke-width="2" opacity="0.7" />
+                    <circle cx="36" cy="14" r="3" fill="currentColor" opacity="0.7" />
+                </svg>
+                Orbit Translator
+            </div>
+            <!-- History Button linking to history.html -->
+            <a href="history.html" class="history-btn" title="View History">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+            </a>
         </div>
 
         <div class="control-group">
@@ -324,7 +354,7 @@
                 </div>
                 <div class="lang-field">
                     <label>User ID</label>
-                    <input type="text" id="userIdInput">
+                    <input type="text" id="userIdInput" placeholder="Authenticating..." readonly>
                 </div>
             </div>
 
@@ -396,7 +426,7 @@
 
     <script>
         /* =========================================================
-           0. Firebase Initialization
+           0. Firebase Initialization & Anonymous Auth
         ========================================================= */
         const firebaseConfig = {
             apiKey: "AIzaSyDBFlUQBJvboua_021Vj5iFYrKEs8pxOew",
@@ -410,9 +440,21 @@
         };
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
+        const auth = firebase.auth();
 
-        // Assign a random User ID on load
-        document.getElementById("userIdInput").value = "User_" + Math.floor(1000 + Math.random() * 9000);
+        // Perform Anonymous Sign-In to establish unique User ID
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                // User is signed in, display uid
+                document.getElementById("userIdInput").value = user.uid;
+            } else {
+                // Not signed in, sign in anonymously
+                auth.signInAnonymously().catch((error) => {
+                    console.error("Firebase Anonymous Auth Error:", error.code, error.message);
+                    document.getElementById("userIdInput").value = "Auth Failed";
+                });
+            }
+        });
 
 
         /* =========================================================
@@ -480,7 +522,7 @@
         function restoreOtherMedia() {
             duckRefCount = Math.max(0, duckRefCount - 1);
             if (duckRefCount !== 0) return;
-            for (const [el, st] of duckStore.entries()) {
+            for (const[el, st] of duckStore.entries()) {
                 try {
                     el.muted = st.muted;
                     if (!el.muted && typeof st.vol === "number") rampVolume(el, st.vol, RESTORE_FADE_MS);
@@ -914,7 +956,7 @@
         let finalText = "", interimText = "", lastTranslatedKey = "", translateTimer = null;
         let segChain = Promise.resolve();
 
-        // Modified full text to include the active speaker's tag
+        // Modified full text to include the active speaker's tag visually
         function currentFullText() {
             const currentUser = document.getElementById("userIdInput").value || "Anonymous";
             const currentInterim = interimText ? (finalText ? "\n" : "") + `[${currentUser}]: ${interimText}` : "";
@@ -964,7 +1006,6 @@
 
                 try {
                     setStatus("Translating…", "on");
-                    // Translate entire block containing tags
                     const translatedString = (await googleTranslate(clipped, sl, tl)) || "…";
 
                     ui.translatedText.textContent = translatedString;
@@ -993,7 +1034,7 @@
                 const langCode = getLangMeta(ui.srcLang).speech || "en-US";
                 const wsUrl = `wss://api.deepgram.com/v1/listen?model=nova-3&language=${langCode}&smart_format=true&interim_results=true&endpointing=10`;
 
-                deepgramSocket = new WebSocket(wsUrl, ['token', DEEPGRAM_API_KEY]);
+                deepgramSocket = new WebSocket(wsUrl,['token', DEEPGRAM_API_KEY]);
 
                 deepgramSocket.onopen = () => {
                     setStatus("Listening…", "on");
@@ -1023,23 +1064,28 @@
                                 const currentUser = document.getElementById("userIdInput").value || "Anonymous";
                                 const currentRoom = document.getElementById("roomIdInput").value || "General";
 
-                                // 1. Save Transcription directly to Firebase (Realtime Database)
-                                database.ref(`rooms/${currentRoom}/transcripts`).push({
-                                    roomId: currentRoom,
-                                    userId: currentUser,
-                                    text: cleaned,
-                                    timestamp: firebase.database.ServerValue.TIMESTAMP
-                                });
-
-                                // 2. Add Speakers Tag to final text UI locally
+                                // Add Speakers Tag to final text UI locally immediately
                                 const taggedCleaned = `[${currentUser}]: ${cleaned}`;
                                 finalText = (finalText ? finalText + "\n" : "") + taggedCleaned;
 
                                 const src = getLangMeta(ui.srcLang), tgt = getLangMeta(ui.tgtLang);
+                                
                                 segChain = segChain.then(async () => {
                                     try {
-                                        // Translate *only* the raw dialogue so the TTS AI doesn't literally say "Bracket Username..."
+                                        // Translate *only* the raw dialogue 
                                         const trans = await googleTranslate(cleaned, src.translate, tgt.translate);
+                                        
+                                        // Save Transcription AND Translation directly to Firebase (Realtime Database)
+                                        database.ref(`rooms/${currentRoom}/transcripts`).push({
+                                            roomId: currentRoom,
+                                            userId: currentUser,
+                                            originalText: cleaned,
+                                            translatedText: trans || "",
+                                            sourceLang: src.value,
+                                            targetLang: tgt.value,
+                                            timestamp: firebase.database.ServerValue.TIMESTAMP
+                                        });
+
                                         if (trans) enqueueTTS(trans, tgt.cartesia, currentEmotion);
                                     } catch (e) { ui.debug.textContent = "Seg Trans Err: " + e; }
                                 }).catch(() => { });
@@ -1109,7 +1155,7 @@
         /* =========================================================
            4. FULL Language + Dialect + Regional List
         ========================================================= */
-        const VARIANTS = [["en-US", "English (United States)", "en-US", "en-US", "en"],["en-GB", "English (United Kingdom)", "en-GB", "en-GB", "en"], ["en-AU", "English (Australia)", "en-AU", "en-AU", "en"], ["en-CA", "English (Canada)", "en-CA", "en-CA", "en"],["en-NZ", "English (New Zealand)", "en-NZ", "en-NZ", "en"],["en-PH", "English (Philippines)", "en-PH", "en-PH", "en"],["en-ZA", "English (South Africa)", "en-ZA", "en-ZA", "en"],["en-IN", "English (India)", "en-IN", "en-IN", "en"],["nl-NL", "Dutch (Netherlands)", "nl", "nl-NL", "nl"],["nl-BE", "Dutch (Belgium / Flemish)", "nl-BE", "nl-BE", "nl"],["fr-FR", "French (France)", "fr-FR", "fr-FR", "fr"],["fr-CA", "French (Canada)", "fr-CA", "fr-CA", "fr"],["fr-CH", "French (Switzerland)", "fr-CH", "fr-CH", "fr"],["es-ES", "Spanish (Spain)", "es-ES", "es-ES", "es"],["es-MX", "Spanish (Mexico)", "es-MX", "es-MX", "es"],["es-US", "Spanish (United States)", "es-US", "es-US", "es"],["es-419", "Spanish (Latin America)", "es-419", "es-419", "es"],["es-AR", "Spanish (Argentina)", "es-AR", "es-AR", "es"],["es-CL", "Spanish (Chile)", "es-CL", "es-CL", "es"],["es-CO", "Spanish (Colombia)", "es-CO", "es-CO", "es"],["es-PE", "Spanish (Peru)", "es-PE", "es-PE", "es"],["es-VE", "Spanish (Venezuela)", "es-VE", "es-VE", "es"],["es-UY", "Spanish (Uruguay)", "es-UY", "es-UY", "es"],["es-EC", "Spanish (Ecuador)", "es-EC", "es-EC", "es"],["es-GT", "Spanish (Guatemala)", "es-GT", "es-GT", "es"],["es-HN", "Spanish (Honduras)", "es-HN", "es-HN", "es"],["es-NI", "Spanish (Nicaragua)", "es-NI", "es-NI", "es"],["es-PA", "Spanish (Panama)", "es-PA", "es-PA", "es"],["es-PY", "Spanish (Paraguay)", "es-PY", "es-PY", "es"],["es-PR", "Spanish (Puerto Rico)", "es-PR", "es-PR", "es"],["es-CR", "Spanish (Costa Rica)", "es-CR", "es-CR", "es"],["es-SV", "Spanish (El Salvador)", "es-SV", "es-SV", "es"],["es-HT", "Spanish (Haiti)", "es-HT", "es-HT", "es"],["pt-PT", "Portuguese (Portugal)", "pt-PT", "pt-PT", "pt"],["pt-BR", "Portuguese (Brazil)", "pt-BR", "pt-BR", "pt"],["zh-CN", "Chinese (China / Simplified)", "zh-CN", "zh-CN", "zh"],["zh-TW", "Chinese (Taiwan / Traditional)", "zh-TW", "zh-TW", "zh"],["zh-HK", "Chinese (Hong Kong)", "zh-HK", "zh-HK", "zh"],["zh-Hans", "Chinese (Simplified Script)", "zh-Hans", "zh-Hans", "zh"],["zh-Hant", "Chinese (Traditional Script)", "zh-Hant", "zh-Hant", "zh"],["ar-SA", "Arabic (Saudi Arabia)", "ar-SA", "ar-SA", "ar"],["bn-IN", "Bengali (India)", "bn-IN", "bn-IN", "bn"],["pa-PK", "Punjabi (Pakistan)", "pa-PK", "pa-PK", "pa"],["bs-Cyrl", "Bosnian (Cyrillic)", "bs-Cyrl", "bs-Cyrl", ""],["ms-Arab", "Malay (Jawi)", "ms-Arab", "ms-Arab", "ms"],["pa-Arab", "Punjabi (Shahmukhi)", "pa-Arab", "pa-Arab", "pa"],["mni-Mtei", "Meiteilon (Manipuri, Meitei Mayek)", "mni-Mtei", "mni-Mtei", ""],["nb-NO", "Norwegian Bokmål (Norway)", "nb", "nb-NO", "no"]];
+        const VARIANTS = [["en-US", "English (United States)", "en-US", "en-US", "en"],["en-GB", "English (United Kingdom)", "en-GB", "en-GB", "en"],["en-AU", "English (Australia)", "en-AU", "en-AU", "en"],["en-CA", "English (Canada)", "en-CA", "en-CA", "en"],["en-NZ", "English (New Zealand)", "en-NZ", "en-NZ", "en"],["en-PH", "English (Philippines)", "en-PH", "en-PH", "en"],["en-ZA", "English (South Africa)", "en-ZA", "en-ZA", "en"],["en-IN", "English (India)", "en-IN", "en-IN", "en"],["nl-NL", "Dutch (Netherlands)", "nl", "nl-NL", "nl"],["nl-BE", "Dutch (Belgium / Flemish)", "nl-BE", "nl-BE", "nl"],["fr-FR", "French (France)", "fr-FR", "fr-FR", "fr"],["fr-CA", "French (Canada)", "fr-CA", "fr-CA", "fr"],["fr-CH", "French (Switzerland)", "fr-CH", "fr-CH", "fr"],["es-ES", "Spanish (Spain)", "es-ES", "es-ES", "es"],["es-MX", "Spanish (Mexico)", "es-MX", "es-MX", "es"],["es-US", "Spanish (United States)", "es-US", "es-US", "es"],["es-419", "Spanish (Latin America)", "es-419", "es-419", "es"],["es-AR", "Spanish (Argentina)", "es-AR", "es-AR", "es"],["es-CL", "Spanish (Chile)", "es-CL", "es-CL", "es"],["es-CO", "Spanish (Colombia)", "es-CO", "es-CO", "es"],["es-PE", "Spanish (Peru)", "es-PE", "es-PE", "es"],["es-VE", "Spanish (Venezuela)", "es-VE", "es-VE", "es"],["es-UY", "Spanish (Uruguay)", "es-UY", "es-UY", "es"],["es-EC", "Spanish (Ecuador)", "es-EC", "es-EC", "es"],["es-GT", "Spanish (Guatemala)", "es-GT", "es-GT", "es"],["es-HN", "Spanish (Honduras)", "es-HN", "es-HN", "es"],["es-NI", "Spanish (Nicaragua)", "es-NI", "es-NI", "es"],["es-PA", "Spanish (Panama)", "es-PA", "es-PA", "es"],["es-PY", "Spanish (Paraguay)", "es-PY", "es-PY", "es"],["es-PR", "Spanish (Puerto Rico)", "es-PR", "es-PR", "es"],["es-CR", "Spanish (Costa Rica)", "es-CR", "es-CR", "es"],["es-SV", "Spanish (El Salvador)", "es-SV", "es-SV", "es"],["es-HT", "Spanish (Haiti)", "es-HT", "es-HT", "es"],["pt-PT", "Portuguese (Portugal)", "pt-PT", "pt-PT", "pt"],["pt-BR", "Portuguese (Brazil)", "pt-BR", "pt-BR", "pt"],["zh-CN", "Chinese (China / Simplified)", "zh-CN", "zh-CN", "zh"],["zh-TW", "Chinese (Taiwan / Traditional)", "zh-TW", "zh-TW", "zh"],["zh-HK", "Chinese (Hong Kong)", "zh-HK", "zh-HK", "zh"],["zh-Hans", "Chinese (Simplified Script)", "zh-Hans", "zh-Hans", "zh"],["zh-Hant", "Chinese (Traditional Script)", "zh-Hant", "zh-Hant", "zh"],["ar-SA", "Arabic (Saudi Arabia)", "ar-SA", "ar-SA", "ar"],["bn-IN", "Bengali (India)", "bn-IN", "bn-IN", "bn"],["pa-PK", "Punjabi (Pakistan)", "pa-PK", "pa-PK", "pa"],["bs-Cyrl", "Bosnian (Cyrillic)", "bs-Cyrl", "bs-Cyrl", ""],["ms-Arab", "Malay (Jawi)", "ms-Arab", "ms-Arab", "ms"],["pa-Arab", "Punjabi (Shahmukhi)", "pa-Arab", "pa-Arab", "pa"],["mni-Mtei", "Meiteilon (Manipuri, Meitei Mayek)", "mni-Mtei", "mni-Mtei", ""],["nb-NO", "Norwegian Bokmål (Norway)", "nb", "nb-NO", "no"]];
 
         const BASE_LANGS = {
             "ab": "Abkhaz", "ace": "Acehnese", "ach": "Acholi", "af": "Afrikaans", "sq": "Albanian", "alz": "Alur", "am": "Amharic", "ar": "Arabic",
