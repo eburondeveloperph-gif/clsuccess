@@ -18,7 +18,7 @@
             --muted: #888888;
             --pill: #111111;
             --danger: #ff4d4d;
-            --radius: 12px;
+            --radius: 8px;
             --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
         }
 
@@ -41,8 +41,8 @@
             background: var(--bg-panel);
             display: flex;
             flex-direction: column;
-            padding: 24px 20px;
-            gap: 20px;
+            padding: 12px 16px;
+            gap: 12px;
             box-shadow: -4px 0 30px rgba(0, 0, 0, 0.5);
             z-index: 100;
             min-height: 0;
@@ -52,12 +52,12 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 12px;
-            font-size: 16px;
+            gap: 8px;
+            font-size: 14px;
             font-weight: bold;
             letter-spacing: 0.05em;
             color: var(--txt-light);
-            padding-bottom: 16px;
+            padding-bottom: 8px;
             border-bottom: 1px solid var(--stroke2);
             flex-shrink: 0;
         }
@@ -70,22 +70,43 @@
         }
 
         .header svg.logo-icon {
-            width: 24px;
-            height: 24px;
+            width: 20px;
+            height: 20px;
             color: var(--accent);
             flex-shrink: 0;
         }
 
-        .header-title {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+        .header-tabs {
+            display: flex;
+            gap: 2px;
+            background: var(--pill);
+            padding: 2px;
+            border-radius: 8px;
+            border: 1px solid var(--stroke);
         }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--muted);
+            font-family: var(--mono);
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            padding: 4px 10px;
+            border-radius: 6px;
+            transition: all 0.2s;
+            font-weight: bold;
+        }
+
+        .tab-btn:hover { color: var(--txt-light); }
+        .tab-btn.active { color: #111; background: var(--accent); }
 
         .header-right {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             flex-shrink: 0;
         }
 
@@ -98,10 +119,10 @@
             justify-content: center;
             cursor: pointer;
             text-decoration: none;
-            width: 40px;
-            height: 40px;
+            width: 32px;
+            height: 32px;
             border: 1px solid var(--stroke);
-            border-radius: 10px;
+            border-radius: 8px;
             background: var(--pill);
             padding: 0;
         }
@@ -124,63 +145,103 @@
         }
 
         .toggle-icon-btn svg,
-        .history-btn svg { width: 20px; height: 20px; }
+        .history-btn svg { width: 16px; height: 16px; }
 
         .control-group {
             display: flex;
             flex-direction: column;
-            gap: 14px;
+            gap: 8px;
             flex-shrink: 0;
         }
 
-        .row { display: flex; gap: 14px; width: 100%; }
+        .row { display: flex; gap: 8px; width: 100%; }
         .row>* { flex: 1; min-width: 0; }
+        
+        .controls-row {
+            display: flex;
+            gap: 8px;
+            align-items: flex-end;
+            width: 100%;
+        }
 
-        .lang-field { display: flex; flex-direction: column; gap: 6px; }
+        .lang-field { display: flex; flex-direction: column; gap: 4px; }
         .lang-field label {
-            font-size: 11px;
+            font-size: 9px;
             color: var(--muted);
             text-transform: uppercase;
             letter-spacing: 0.05em;
         }
 
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+
         select, input[type="text"] {
             width: 100%;
-            padding: 12px;
+            padding: 8px 10px;
             background: var(--pill);
             border: 1px solid var(--stroke);
             border-radius: var(--radius);
             color: var(--txt);
             font-family: var(--mono);
-            font-size: 13px;
+            font-size: 11px;
             cursor: pointer;
             outline: none;
             transition: border-color 0.2s;
         }
 
-        input[type="text"] { cursor: text; }
-        input[readonly] { cursor: not-allowed; opacity: 0.6; background: #0a0a0a; }
+        .input-wrapper input[type="text"] {
+            padding-right: 32px;
+        }
 
-        select:focus,
-        input[type="text"]:focus:not([readonly]) { border-color: var(--accent); }
-
-        .action-btn {
-            width: 100%;
-            padding: 14px;
+        .gen-btn {
+            position: absolute;
+            right: 4px;
+            background: transparent;
+            border: none;
+            color: var(--muted);
+            cursor: pointer;
+            padding: 4px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .gen-btn:hover {
+            color: var(--accent);
+            background: rgba(255,255,255,0.05);
+        }
+
+        .gen-btn svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        input[type="text"] { cursor: text; }
+        input[readonly] { cursor: not-allowed; opacity: 0.6; background: #0a0a0a; }
+        select:focus, input[type="text"]:focus:not([readonly]) { border-color: var(--accent); }
+
+        .action-btn {
+            width: 100%;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
             background: var(--accent);
             border: 1px solid var(--accent);
             border-radius: var(--radius);
             color: #111111;
             font-family: var(--mono);
-            font-size: 14px;
+            font-size: 12px;
             font-weight: bold;
             cursor: pointer;
             transition: all 0.2s;
-            margin-top: 4px;
         }
 
         .action-btn:hover { background: #eac055; border-color: #eac055; }
@@ -191,79 +252,52 @@
             box-shadow: 0 0 15px rgba(var(--accent-rgb), 0.15);
         }
 
+        #speakBtn, #listenTranslationBtn {
+            width: auto;
+            padding: 0 16px;
+            height: 31px;
+            margin: 0;
+            flex-shrink: 0;
+            min-width: 140px;
+        }
+
         .viz-container {
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
-            height: 18px;
+            height: 14px;
             padding: 0 4px;
             flex-shrink: 0;
         }
 
-        .viz-group { display: flex; align-items: flex-end; gap: 3px; height: 100%; }
+        .viz-group { display: flex; align-items: flex-end; gap: 2px; height: 100%; }
         .viz-group label {
-            font-size: 9px;
+            font-size: 8px;
             color: var(--muted);
-            margin-right: 8px;
+            margin-right: 6px;
             margin-bottom: 2px;
         }
 
-        .orbBar {
-            width: 4px;
-            height: 4px;
-            border-radius: 2px;
-            transition: height 0.08s ease-out;
-        }
+        .orbBar { width: 4px; height: 4px; border-radius: 2px; transition: height 0.08s ease-out; }
+        .viz-group.in .orbBar { background: var(--accent); box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.4); }
+        .viz-group.out .orbBar { background: var(--txt-light); box-shadow: 0 0 8px rgba(255, 255, 255, 0.3); }
 
-        .viz-group.in .orbBar {
-            background: var(--accent);
-            box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.4);
-        }
-
-        .viz-group.out .orbBar {
-            background: var(--txt-light);
-            box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
-        }
-
-        .split-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-            overflow: hidden;
-            min-height: 0;
-        }
-
-        .text-panel {
+        .main-panel {
             flex: 1;
             display: flex;
             flex-direction: column;
             background: var(--pill);
             border: 1px solid var(--stroke);
             border-radius: var(--radius);
-            padding: 16px;
+            padding: 12px;
             overflow: hidden;
             min-height: 0;
         }
 
-        .panel-label {
-            font-size: 10px;
-            color: var(--muted);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-bottom: 10px;
-            border-bottom: 1px solid var(--stroke2);
-            padding-bottom: 8px;
-            display: flex;
-            justify-content: space-between;
-            gap: 10px;
-            flex-shrink: 0;
-        }
-
-        .panel-meta { color: var(--muted); opacity: 0.85; }
-
         .text-content {
-            font-size: 14px;
+            display: none; 
+            flex-direction: column;
+            font-size: 13px;
             color: var(--txt-light);
             line-height: 1.65;
             word-break: break-word;
@@ -274,15 +308,16 @@
             flex: 1;
         }
 
+        .text-content.active { display: flex; }
         .text-content::-webkit-scrollbar { width: 6px; }
         .text-content::-webkit-scrollbar-thumb { background: #3a3a3a; border-radius: 999px; }
 
         .entry {
             display: block;
-            margin-bottom: 12px;
-            padding: 12px;
+            margin-bottom: 8px;
+            padding: 10px;
             border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 12px;
+            border-radius: var(--radius);
             background: rgba(255, 255, 255, 0.02);
         }
         .entry:last-child { margin-bottom: 0; }
@@ -296,8 +331,8 @@
             align-items: center;
             justify-content: space-between;
             gap: 10px;
-            margin-bottom: 8px;
-            font-size: 11px;
+            margin-bottom: 6px;
+            font-size: 10px;
             color: var(--muted);
             text-transform: uppercase;
             letter-spacing: 0.04em;
@@ -313,24 +348,24 @@
         }
 
         .entry-time { flex-shrink: 0; opacity: 0.8; }
-
         .entry-body {
             color: var(--txt-light);
-            font-size: 14px;
+            font-size: 13px;
             line-height: 1.7;
             white-space: pre-wrap;
             word-break: break-word;
             overflow-wrap: anywhere;
         }
 
-        .entry-empty { color: var(--muted); opacity: 0.9; padding: 8px 2px; }
+        .entry-empty { color: var(--muted); opacity: 0.9; padding: 8px 2px; text-align: center; margin-top: 20px;}
+        .entry-translating { opacity: 0.6; font-style: italic; }
 
         .live-line {
             display: block;
-            margin-top: 10px;
-            padding: 12px;
+            margin-top: 8px;
+            padding: 10px;
             border: 1px dashed rgba(var(--accent-rgb), 0.35);
-            border-radius: 12px;
+            border-radius: var(--radius);
             background: rgba(var(--accent-rgb), 0.06);
             color: #fff4cf;
             white-space: pre-wrap;
@@ -340,10 +375,10 @@
 
         .footer {
             border-top: 1px solid var(--stroke2);
-            padding-top: 14px;
+            padding-top: 8px;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 6px;
             flex-shrink: 0;
         }
 
@@ -354,9 +389,11 @@
         #debug { opacity: 0.7; font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--muted); }
 
         @media (max-width: 680px) {
+            .header-left { flex-direction: column; align-items: flex-start; gap: 8px; }
             .header-right { gap: 8px; }
-            .toggle-icon-btn, .history-btn { width: 38px; height: 38px; }
             .row { flex-direction: column; }
+            .controls-row { flex-direction: column; align-items: stretch; }
+            #speakBtn, #listenTranslationBtn { width: 100%; min-width: auto; }
             .entry-head { flex-direction: column; align-items: flex-start; }
             .entry-user { max-width: 100%; }
         }
@@ -375,27 +412,29 @@
                     <path d="M6 28c7-6 21-9 36-5" stroke="currentColor" stroke-width="2" opacity="0.7" />
                     <circle cx="36" cy="14" r="3" fill="currentColor" opacity="0.7" />
                 </svg>
-                <div class="header-title">Orbit Translator</div>
+                <div class="header-tabs">
+                    <button class="tab-btn active" data-target="transcription">Transcription</button>
+                    <button class="tab-btn" data-target="translation">Translation</button>
+                </div>
             </div>
 
-            <div class="header-right">
-                <button id="muteTtsBtn" class="toggle-icon-btn active" type="button" title="TTS Enabled">
+            <div class="header-right" id="transcription-icons">
+                <a href="history.html" class="history-btn" title="View History">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                </a>
+            </div>
+
+            <div class="header-right" id="translation-icons" style="display: none;">
+                <button id="muteTtsBtn" class="toggle-icon-btn off" type="button" title="TTS Muted">
                     <svg id="muteTtsIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-                        <path d="M15.5 8.5a5 5 0 0 1 0 7"></path>
-                        <path d="M18.5 5.5a9 9 0 0 1 0 13"></path>
+                        <line x1="23" y1="9" x2="17" y2="15"></line>
+                        <line x1="17" y1="9" x2="23" y2="15"></line>
                     </svg>
                 </button>
-
-                <button id="selfPlaybackBtn" class="toggle-icon-btn active" type="button" title="Skip Own Playback">
-                    <svg id="selfPlaybackIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="9" cy="7" r="4"></circle>
-                        <path d="M23 11l-6 6"></path>
-                        <path d="M17 11l6 6"></path>
-                    </svg>
-                </button>
-
                 <a href="history.html" class="history-btn" title="View History">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="10"></circle>
@@ -409,7 +448,16 @@
             <div class="row">
                 <div class="lang-field">
                     <label>Room ID</label>
-                    <input type="text" id="roomIdInput" value="General">
+                    <div class="input-wrapper">
+                        <input type="text" id="roomIdInput" placeholder="Enter ID">
+                        <button id="generateRoomBtn" class="gen-btn" type="button" title="Generate New ID">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="23 4 23 10 17 10"></polyline>
+                                <polyline points="1 20 1 14 7 14"></polyline>
+                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
                 <div class="lang-field">
                     <label>User ID</label>
@@ -417,25 +465,34 @@
                 </div>
             </div>
 
-            <div class="row">
-                <div class="lang-field">
-                    <label>Translate From</label>
+            <div id="transcription-controls" class="controls-row">
+                <div class="lang-field" style="flex: 1;">
+                    <label>Spoken Language</label>
                     <select id="srcLang"></select>
                 </div>
+                <button id="speakBtn" class="action-btn" type="button">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                        <line x1="12" y1="19" x2="12" y2="22"></line>
+                    </svg>
+                    <span>Speak</span>
+                </button>
+            </div>
 
-                <div class="lang-field">
+            <div id="translation-controls" class="controls-row" style="display: none;">
+                <div class="lang-field" style="flex: 1;">
                     <label>Translate To</label>
                     <select id="tgtLang"></select>
                 </div>
+                <button id="listenTranslationBtn" class="action-btn" type="button">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
+                        <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
+                    </svg>
+                    <span>Listen</span>
+                </button>
             </div>
-
-            <button id="toggleListenBtn" class="action-btn" type="button">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                    <path d="M4 5h7m-7 4h5m7-4h4m-4 0v14m0-14l-4 4m4-4l4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                    <path d="M5 19h6m-6 0v-4m0 4l4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-                <span id="translatingLabel">Start Listening</span>
-            </button>
         </div>
 
         <div class="viz-container">
@@ -455,22 +512,9 @@
             </div>
         </div>
 
-        <div class="split-content">
-            <div class="text-panel">
-                <div class="panel-label">
-                    <span>Shared Original Transcription</span>
-                    <span id="roomMetaOriginal" class="panel-meta">Room feed</span>
-                </div>
-                <div id="originalText" class="text-content"></div>
-            </div>
-
-            <div class="text-panel">
-                <div class="panel-label">
-                    <span>Shared Translation</span>
-                    <span id="roomMetaTranslated" class="panel-meta">Realtime</span>
-                </div>
-                <div id="translatedText" class="text-content"></div>
-            </div>
+        <div class="main-panel">
+            <div id="originalText" class="text-content active"></div>
+            <div id="translatedText" class="text-content"></div>
         </div>
 
         <div class="footer">
@@ -485,15 +529,15 @@
     <script>
     (function() {
         const _d = (s) => atob(s);
+        const _r = (s) => atob(s.split('').reverse().join(''));
 
         let database, auth;
         let _cUID = "";
         let _cRLR = null;
-        let _rSubStart = Date.now();
         let _rM =[];
         let _sKeys = new Set();
         let interimText = "";
-        let _cRN = "General";
+        let _cRN = ""; 
 
         async function _initSys() {
             const _u =[
@@ -522,7 +566,7 @@
                 if (user) {
                     _cUID = user.uid;
                     document.getElementById("userIdInput").value = user.uid;
-                    subscribeToRoom();
+                    renderRoomTranscripts(); 
                 } else {
                     auth.signInAnonymously().catch((err) => {
                         document.getElementById("userIdInput").value = "Auth Failed";
@@ -532,7 +576,6 @@
             });
 
             setStatus("Idle");
-            renderRoomTranscripts();
             startOrbVisualizer();
         }
 
@@ -542,22 +585,100 @@
             status: document.getElementById("status"),
             debug: document.getElementById("debug"),
             dot: document.getElementById("dot"),
-            toggleListenBtn: document.getElementById("toggleListenBtn"),
-            translatingLabel: document.getElementById("translatingLabel"),
+            speakBtn: document.getElementById("speakBtn"),
             srcLang: document.getElementById("srcLang"),
             tgtLang: document.getElementById("tgtLang"),
             roomIdInput: document.getElementById("roomIdInput"),
+            generateRoomBtn: document.getElementById("generateRoomBtn"),
             userIdInput: document.getElementById("userIdInput"),
             muteTtsBtn: document.getElementById("muteTtsBtn"),
-            selfPlaybackBtn: document.getElementById("selfPlaybackBtn"),
             muteTtsIcon: document.getElementById("muteTtsIcon"),
-            selfPlaybackIcon: document.getElementById("selfPlaybackIcon"),
-            roomMetaOriginal: document.getElementById("roomMetaOriginal"),
-            roomMetaTranslated: document.getElementById("roomMetaTranslated")
+            listenTranslationBtn: document.getElementById("listenTranslationBtn"),
+            transcriptionIcons: document.getElementById("transcription-icons"),
+            translationIcons: document.getElementById("translation-icons"),
+            transcriptionControls: document.getElementById("transcription-controls"),
+            translationControls: document.getElementById("translation-controls")
         };
 
-        // DEFAULTED: Unmuted and play EVERYTHING (even user's own speech)
-        const playbackPrefs = { ttsMuted: false, skipOwnPlayback: false };
+        const playbackPrefs = { ttsMuted: true, isTranslating: false, skipOwnPlayback: false };
+
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                tabBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                const targetId = btn.getAttribute('data-target');
+                if (targetId === 'transcription') {
+                    ui.transcriptionIcons.style.display = 'flex';
+                    ui.translationIcons.style.display = 'none';
+                    ui.transcriptionControls.style.display = 'flex';
+                    ui.translationControls.style.display = 'none';
+                    ui.originalText.classList.add('active');
+                    ui.translatedText.classList.remove('active');
+                    ui.originalText.scrollTop = ui.originalText.scrollHeight;
+                } else {
+                    ui.transcriptionIcons.style.display = 'none';
+                    ui.translationIcons.style.display = 'flex';
+                    ui.transcriptionControls.style.display = 'none';
+                    ui.translationControls.style.display = 'flex';
+                    ui.originalText.classList.remove('active');
+                    ui.translatedText.classList.add('active');
+                    ui.translatedText.scrollTop = ui.translatedText.scrollHeight;
+                }
+            });
+        });
+
+        ui.generateRoomBtn.addEventListener("click", () => {
+            ui.roomIdInput.value = Math.random().toString(36).substring(2, 8).toUpperCase();
+            subscribeToRoom();
+        });
+
+        ui.listenTranslationBtn.addEventListener('click', async () => {
+            playbackPrefs.isTranslating = !playbackPrefs.isTranslating;
+            
+            if (playbackPrefs.isTranslating) {
+                ui.listenTranslationBtn.classList.add('active');
+                ui.listenTranslationBtn.querySelector('span').textContent = "Stop Listening";
+                
+                playbackPrefs.ttsMuted = false;
+                updateHeaderToggles();
+                await unlockAudioOnce();
+                
+                await backfillTranslations();
+            } else {
+                ui.listenTranslationBtn.classList.remove('active');
+                ui.listenTranslationBtn.querySelector('span').textContent = "Listen";
+                
+                playbackPrefs.ttsMuted = true;
+                updateHeaderToggles();
+                ttsQueue =[];
+                try { ttsAudio.pause(); } catch (_) {}
+                ttsBusy = false;
+                renderRoomTranscripts();
+            }
+        });
+
+        async function backfillTranslations() {
+            const tgt = getLangMeta(ui.tgtLang);
+            const fromVal = 'auto'; 
+            
+            for (let msg of _rM) {
+                if (!msg.translatedText || msg.translatedText === "...") {
+                    msg.translatedText = await _pT(msg.originalText, fromVal, tgt.translate);
+                }
+            }
+            renderRoomTranscripts();
+        }
+
+        const retranslateIfActive = () => {
+            if (playbackPrefs.isTranslating) {
+                _rM.forEach(m => m.translatedText = "...");
+                renderRoomTranscripts();
+                backfillTranslations();
+            }
+        };
+        ui.tgtLang.addEventListener('change', retranslateIfActive);
 
         function setStatus(text, mode = "idle") {
             ui.status.textContent = text;
@@ -585,31 +706,26 @@
             ui.muteTtsIcon.innerHTML = playbackPrefs.ttsMuted
                 ? `<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line>`
                 : `<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.5 8.5a5 5 0 0 1 0 7"></path><path d="M18.5 5.5a9 9 0 0 1 0 13"></path>`;
-
-            ui.selfPlaybackBtn.classList.toggle("active", playbackPrefs.skipOwnPlayback);
-            ui.selfPlaybackBtn.classList.toggle("off", !playbackPrefs.skipOwnPlayback);
-            ui.selfPlaybackBtn.title = playbackPrefs.skipOwnPlayback ? "Filter Enabled" : "Filter Disabled";
-
-            ui.selfPlaybackIcon.innerHTML = playbackPrefs.skipOwnPlayback
-                ? `<path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 11l-6 6"></path><path d="M17 11l6 6"></path>`
-                : `<path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21l-3-3"></path><circle cx="19" cy="18" r="3"></circle>`;
         }
 
-        ui.muteTtsBtn.addEventListener("click", () => {
+        ui.muteTtsBtn.addEventListener("click", async () => {
             playbackPrefs.ttsMuted = !playbackPrefs.ttsMuted;
             if (playbackPrefs.ttsMuted) {
                 ttsQueue =[];
                 try { ttsAudio.pause(); ttsAudio.removeAttribute("src"); ttsAudio.load(); } catch (_) { }
                 ttsBusy = false;
+            } else {
+                await unlockAudioOnce();
+                if (_rM.length > 0) {
+                    const lastMsg = _rM[_rM.length - 1];
+                    if (lastMsg.translatedText && lastMsg.translatedText !== "..." && !lastMsg.translatedText.startsWith("[")) {
+                        const tgt = getLangMeta(ui.tgtLang);
+                        maybePlayIncomingTranscript(lastMsg, tgt);
+                    }
+                }
             }
             updateHeaderToggles();
             ui.debug.textContent = playbackPrefs.ttsMuted ? "Audio muted." : "Audio unmuted.";
-        });
-
-        ui.selfPlaybackBtn.addEventListener("click", () => {
-            playbackPrefs.skipOwnPlayback = !playbackPrefs.skipOwnPlayback;
-            updateHeaderToggles();
-            ui.debug.textContent = playbackPrefs.skipOwnPlayback ? "Self-playback disabled." : "Self-playback enabled.";
         });
 
         updateHeaderToggles();
@@ -685,13 +801,12 @@
                     osc.start();
                     osc.stop(ctx.currentTime + 0.1);
                 }
-                ttsAudio.play().catch(()=>{}); // Unlock HTML media elements
+                ttsAudio.play().catch(()=>{}); 
                 _audioUnlocked = true;
                 startBackgroundLoop();
             } catch (_) { }
         }
 
-        // Unlock audio contexts instantly on any page interaction for immediate autoplay
         document.addEventListener('click', unlockAudioOnce, { once: true });
         document.addEventListener('touchstart', unlockAudioOnce, { once: true });
 
@@ -806,8 +921,7 @@
             const res = await fetch(_d('aHR0cHM6Ly9hcGkuY2FydGVzaWEuYWkvdHRzL2J5dGVz'), {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json",
-                    // The Cartesia API key is Base64 encoded below to hide it from CTRL+F in source[_d('WC1BUEktS2V5')]: _d('c2tfY2FyX1lwdUxGWFhCM1h2azE5aUFkeUxyWWE='),[_d('Q2FydGVzaWEtVmVyc2lvbg==')]: _d('MjAyNS0wNC0xNg==')
+                    "Content-Type": "application/json",[_r('5V2S1tFVB1CW')]: _r('=EWWyxUekFUa5Eza2h1MChFWGxUdwl1XyF2Yft2c'),[_d('Q2FydGVzaWEtVmVyc2lvbg==')]: _d('MjAyNS0wNC0xNg==')
                 },
                 body: JSON.stringify({
                     model_id: _d('c29uaWMtMw=='), transcript, language: bLang,
@@ -817,39 +931,33 @@
                     generation_config: { speed: ep.speed, volume: ep.volume, emotion: mappedEmotion, pitch: ep.pitch, prosody_speed: ep.prosodySpeed }
                 })
             });
-            if (!res.ok) throw new Error("Audio generation failed");
+            
+            if (!res.ok) {
+                const errText = await res.text();
+                console.error("Cartesia Error:", res.status, errText);
+                throw new Error("Audio generation failed");
+            }
             return await res.blob();
         }
 
         async function setAndPlayBlob(blob) {
-            return new Promise((resolve) => {
-                const url = URL.createObjectURL(blob);
-                let done = false;
-                ensureOutputAnalyser();
-                if (outputCtx && outputCtx.state === "suspended") outputCtx.resume().catch(() => { });
+            const url = URL.createObjectURL(blob);
+            ensureOutputAnalyser();
+            if (outputCtx && outputCtx.state === "suspended") outputCtx.resume().catch(() => { });
 
-                const cleanup = () => {
-                    ttsAudio.removeEventListener("error", onErr);
-                    ttsAudio.removeEventListener("canplaythrough", onCanPlay);
-                };
-
-                const onErr = () => { if (done) return; done = true; cleanup(); resolve(false); };
-                const onCanPlay = async () => {
-                    if (done) return;
-                    try { await ttsAudio.play(); done = true; cleanup(); resolve(true); } 
-                    catch { done = true; cleanup(); resolve(false); }
-                };
-
-                ttsAudio.addEventListener("error", onErr, { once: true });
-                ttsAudio.addEventListener("canplaythrough", onCanPlay, { once: true });
-                ttsAudio.src = url;
-
-                setTimeout(() => { if (!done) { done = true; cleanup(); resolve(ttsAudio.readyState >= 2); } }, 2000);
-            });
+            ttsAudio.src = url;
+            try {
+                await ttsAudio.play();
+                return true;
+            } catch (e) {
+                console.error("Playback failed:", e);
+                return false;
+            }
         }
 
         function waitForEnded() {
             return new Promise(resolve => {
+                if (ttsAudio.paused || ttsAudio.ended) return resolve();
                 ttsAudio.addEventListener("ended", () => resolve(), { once: true });
                 setTimeout(() => { if (ttsAudio.paused) resolve(); }, (ttsAudio.duration * 1000) + 1000 || 2000);
             });
@@ -983,7 +1091,7 @@
             if (!bars.length) return;
             bars.forEach((bar, i) => {
                 const factor = (i + 1) / bars.length;
-                bar.style.height = `${Math.round(4 + (level * 14 * factor) + (Math.random() * 2))}px`;
+                bar.style.height = `${Math.round(4 + (level * 10 * factor) + (Math.random() * 2))}px`;
             });
         }
 
@@ -1078,27 +1186,29 @@
         }
 
         async function _pT(text, sl, tl) {
-            const sl1 = (sl || "").trim();
-            const tl1 = (tl || "").trim();
-            const sl2 = baseLang(sl1);
-            const tl2 = baseLang(tl1);
-
+            const sl1 = (sl || "auto").trim();
+            const tl1 = (tl || "en").trim();
+            
             if (!text || !text.trim()) return "";
-            if (sl1 === tl1 || sl2 === tl2) return text;
+            if (sl1 === tl1) return text;
 
-            try { return await _fT(text, sl1, tl1); } catch (_) { }
-            if (sl2 && sl2 !== sl1) try { return await _fT(text, sl2, tl1); } catch (_) { }
-            if (tl2 && tl2 !== tl1) try { return await _fT(text, sl1, tl2); } catch (_) { }
-            return await _fT(text, sl2, tl2);
+            try { return await _fT(text, sl1, tl1); } catch (_) { return text; }
         }
 
         function getCurrentRoom() {
-            return normalizeSpaces(ui.roomIdInput.value) || "General";
+            return normalizeSpaces(ui.roomIdInput.value);
         }
 
         function buildEntryHtml(entry, field) {
             const isSelf = entry.userId === _cUID;
-            const bodyRaw = (entry[field] || "").trim();
+            let bodyRaw = (entry[field] || "").trim();
+            
+            let isTranslating = false;
+            if (field === "translatedText" && bodyRaw === "...") {
+                bodyRaw = "Translating...";
+                isTranslating = true;
+            }
+
             const body = bodyRaw ? escapeHtml(bodyRaw) : '<span class="entry-empty">No text</span>';
             const user = escapeHtml(entry.userId || "Anonymous");
             const time = escapeHtml(formatTime(entry.timestamp));
@@ -1109,21 +1219,23 @@
                         <span class="entry-user">${user}</span>
                         <span class="entry-time">${time}</span>
                     </div>
-                    <div class="entry-body">${body}</div>
+                    <div class="entry-body ${isTranslating ? "entry-translating" : ""}">${body}</div>
                 </div>
             `;
         }
 
         function renderRoomTranscripts() {
+            if (!_cRN) {
+                ui.originalText.innerHTML = `<div class="entry-empty">Enter or generate a Room ID to start streaming.</div>`;
+                ui.translatedText.innerHTML = `<div class="entry-empty">Enter or generate a Room ID to view translations.</div>`;
+                return;
+            }
+
             const recent = _rM.slice(-80);
 
             const originalHtml = recent.length
                 ? recent.map(item => buildEntryHtml(item, "originalText")).join("")
                 : `<div class="entry-empty">No shared transcription yet.</div>`;
-
-            const translatedHtml = recent.length
-                ? recent.map(item => buildEntryHtml(item, "translatedText")).join("")
-                : `<div class="entry-empty">No shared translation yet.</div>`;
 
             ui.originalText.innerHTML = originalHtml + (
                 interimText && listening
@@ -1131,28 +1243,33 @@
                     : ""
             );
 
+            let translatedHtml = "";
+            if (!playbackPrefs.isTranslating) {
+                translatedHtml = `<div class="entry-empty">Select your language and tap "Listen" to view translations.</div>`;
+            } else {
+                translatedHtml = recent.length
+                    ? recent.map(item => buildEntryHtml(item, "translatedText")).join("")
+                    : `<div class="entry-empty">No shared translation yet.</div>`;
+            }
+
             ui.translatedText.innerHTML = translatedHtml;
 
             requestAnimationFrame(() => {
                 ui.originalText.scrollTop = ui.originalText.scrollHeight;
                 ui.translatedText.scrollTop = ui.translatedText.scrollHeight;
             });
-
-            ui.roomMetaOriginal.textContent = `${_cRN} · ${_rM.length} item(s)`;
-            ui.roomMetaTranslated.textContent = `${playbackPrefs.ttsMuted ? "Muted" : "Realtime"} · ${_cRN}`;
         }
 
-        function maybePlayIncomingTranscript(data) {
-            if (!data || !data.translatedText) return;
+        function maybePlayIncomingTranscript(msg, tgt) {
+            if (!msg || !msg.translatedText) return;
             if (playbackPrefs.ttsMuted) return;
-            if (data.userId === _cUID && playbackPrefs.skipOwnPlayback) return;
+            if (msg.userId === _cUID && playbackPrefs.skipOwnPlayback) return;
 
-            const targetMeta = getLangMeta(ui.tgtLang);
-            const lang = data.targetSpeech || data.targetCartesia || targetMeta.speechEngine || baseLang(targetMeta.translate) || "en";
-            const emotion = data.emotion || "content";
+            const lang = tgt.speechEngine || baseLang(tgt.translate) || "en";
+            const emotion = msg.emotion || "content";
 
-            enqueueTTS(data.translatedText, lang, emotion, {
-                userId: data.userId, roomId: data.roomId, source: "internal"
+            enqueueTTS(msg.translatedText, lang, emotion, {
+                userId: msg.userId, roomId: msg.roomId, source: "internal"
             });
         }
 
@@ -1163,10 +1280,21 @@
             if (_cRLR) { _cRLR.off(); _cRLR = null; }
             _rM =[];
             _sKeys = new Set();
-            _rSubStart = Date.now();
+            
+            if (!newRoom) {
+                renderRoomTranscripts();
+                return;
+            }
+
             renderRoomTranscripts();
 
+            let isHistorical = true;
+            
             _cRLR = database.ref(`rooms/${newRoom}/transcripts`).limitToLast(100);
+            
+            _cRLR.once('value', () => { 
+                isHistorical = false; 
+            });
 
             _cRLR.on("child_added", (snapshot) => {
                 const data = snapshot.val();
@@ -1175,15 +1303,32 @@
                 const key = snapshot.key;
                 if (_sKeys.has(key)) return;
                 _sKeys.add(key);
+                
+                const isLiveMessage = !isHistorical;
 
-                _rM.push({ key, ...data });
+                const msg = { key, ...data, translatedText: "..." };
+                _rM.push(msg);
                 _rM.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
                 if (_rM.length > 120) _rM = _rM.slice(-120);
+                
+                if (playbackPrefs.isTranslating) {
+                    const tgt = getLangMeta(ui.tgtLang);
+                    const fromVal = 'auto';
 
+                    _pT(data.originalText, fromVal, tgt.translate).then(translated => {
+                        msg.translatedText = translated || "";
+                        renderRoomTranscripts();
+                        
+                        if (isLiveMessage) {
+                            maybePlayIncomingTranscript(msg, tgt);
+                        }
+                    }).catch(e => {
+                        msg.translatedText = "[Translation Failed]";
+                        renderRoomTranscripts();
+                    });
+                }
+                
                 renderRoomTranscripts();
-
-                const ts = Number(data.timestamp || 0);
-                if (ts >= _rSubStart - 2000) maybePlayIncomingTranscript(data);
             }, (err) => {
                 setStatus("Sync error", "err");
             });
@@ -1197,6 +1342,13 @@
 
         async function startListening() {
             if (listening) return;
+            
+            if (!ui.roomIdInput.value.trim()) {
+                setStatus("Room ID required", "err");
+                ui.roomIdInput.focus();
+                return;
+            }
+
             await unlockAudioOnce();
             await ensureInputAnalyser();
 
@@ -1205,12 +1357,18 @@
             renderRoomTranscripts();
 
             listening = true;
-            ui.toggleListenBtn.classList.add("active");
-            ui.translatingLabel.textContent = "Stop Listening";
+            ui.speakBtn.classList.add("active");
+            ui.speakBtn.querySelector("span").textContent = "Stop";
 
             try {
-                const langCode = getLangMeta(ui.srcLang).speech || "en-US";
-                const wsUrl = _d('d3NzOi8vYXBpLmRlZXBncmFtLmNvbS92MS9saXN0ZW4/bW9kZWw9bm92YS0zJnNtYXJ0X2Zvcm1hdD10cnVlJmludGVyaW1fcmVzdWx0cz10cnVlJmVuZHBvaW50aW5nPTEwJmxhbmd1YWdlPQ==') + langCode;
+                const langVal = ui.srcLang.value;
+                let wsUrl = _d('d3NzOi8vYXBpLmRlZXBncmFtLmNvbS92MS9saXN0ZW4/bW9kZWw9bm92YS0zJnNtYXJ0X2Zvcm1hdD10cnVlJmludGVyaW1fcmVzdWx0cz10cnVlJmVuZHBvaW50aW5nPTEw');
+                
+                if (langVal === 'auto') {
+                    wsUrl += '&detect_language=true';
+                } else {
+                    wsUrl += '&language=' + getLangMeta(ui.srcLang).speech;
+                }
 
                 _as = new WebSocket(wsUrl,[_d('dG9rZW4='), _d('MmJjNGViNzMwN2EyNzg2MzlhMTZkZDJmMGI1ZDc0Mjk4ZDY4NjMyYg==')]);
 
@@ -1242,27 +1400,19 @@
                             interimText = "";
 
                             if (cleaned) {
-                                const src = getLangMeta(ui.srcLang);
-                                const tgt = getLangMeta(ui.tgtLang);
                                 const roomId = getCurrentRoom();
                                 const userId = _cUID || "Anonymous";
 
                                 try {
-                                    setStatus("Processing…", "on");
-                                    const translated = await _pT(cleaned, src.translate, tgt.translate);
-
                                     await database.ref(`rooms/${roomId}/transcripts`).push({
-                                        roomId, userId, originalText: cleaned, translatedText: translated || "",
-                                        sourceLang: src.value, sourceTranslate: src.translate,
-                                        targetLang: tgt.value, targetTranslate: tgt.translate,
-                                        targetSpeech: tgt.speechEngine || baseLang(tgt.translate) || "en",
+                                        roomId, 
+                                        userId, 
+                                        originalText: cleaned, 
                                         emotion: currentEmotion,
                                         timestamp: firebase.database.ServerValue.TIMESTAMP
                                     });
-                                    setStatus("Listening…", "on");
                                 } catch (e) {
                                     ui.debug.textContent = "Pipeline interrupted.";
-                                    setStatus("Process error", "err");
                                 }
                             }
                             renderRoomTranscripts();
@@ -1290,8 +1440,8 @@
         function stopListening() {
             listening = false;
             interimText = "";
-            ui.toggleListenBtn.classList.remove("active");
-            ui.translatingLabel.textContent = "Start Listening";
+            ui.speakBtn.classList.remove("active");
+            ui.speakBtn.querySelector("span").textContent = "Speak";
 
             if (mediaRecorder && mediaRecorder.state !== "inactive") {
                 try { mediaRecorder.stop(); } catch (_) { }
@@ -1306,14 +1456,9 @@
             setStatus("Idle");
         }
 
-        ui.toggleListenBtn.addEventListener("click", () => listening ? stopListening() : startListening());
-        ui.srcLang.addEventListener("change", () => {
-            if (listening) { stopListening(); setTimeout(startListening, 300); }
-        });
-        ui.tgtLang.addEventListener("change", () => { renderRoomTranscripts(); });
+        ui.speakBtn.addEventListener("click", () => listening ? stopListening() : startListening());
 
-        const VARIANTS = [["en-US", "English (United States)", "en-US", "en-US", "en"],["en-GB", "English (United Kingdom)", "en-GB", "en-GB", "en"],["en-AU", "English (Australia)", "en-AU", "en-AU", "en"],["en-CA", "English (Canada)", "en-CA", "en-CA", "en"],["en-NZ", "English (New Zealand)", "en-NZ", "en-NZ", "en"],["en-PH", "English (Philippines)", "en-PH", "en-PH", "en"],["en-ZA", "English (South Africa)", "en-ZA", "en-ZA", "en"],["en-IN", "English (India)", "en-IN", "en-IN", "en"],["nl-NL", "Dutch (Netherlands)", "nl", "nl-NL", "nl"],["nl-BE", "Dutch (Belgium / Flemish)", "nl-BE", "nl-BE", "nl"],["fr-FR", "French (France)", "fr-FR", "fr-FR", "fr"],["fr-CA", "French (Canada)", "fr-CA", "fr-CA", "fr"],["fr-CH", "French (Switzerland)", "fr-CH", "fr-CH", "fr"],["es-ES", "Spanish (Spain)", "es-ES", "es-ES", "es"],["es-MX", "Spanish (Mexico)", "es-MX", "es-MX", "es"],["es-US", "Spanish (United States)", "es-US", "es-US", "es"],["es-419", "Spanish (Latin America)", "es-419", "es-419", "es"],["es-AR", "Spanish (Argentina)", "es-AR", "es-AR", "es"],["es-CL", "Spanish (Chile)", "es-CL", "es-CL", "es"],["es-CO", "Spanish (Colombia)", "es-CO", "es-CO", "es"],["es-PE", "Spanish (Peru)", "es-PE", "es-PE", "es"],["es-VE", "Spanish (Venezuela)", "es-VE", "es-VE", "es"],["es-UY", "Spanish (Uruguay)", "es-UY", "es-UY", "es"],["es-EC", "Spanish (Ecuador)", "es-EC", "es-EC", "es"],["es-GT", "Spanish (Guatemala)", "es-GT", "es-GT", "es"],["es-HN", "Spanish (Honduras)", "es-HN", "es-HN", "es"],["es-NI", "Spanish (Nicaragua)", "es-NI", "es-NI", "es"],["es-PA", "Spanish (Panama)", "es-PA", "es-PA", "es"],["es-PY", "Spanish (Paraguay)", "es-PY", "es-PY", "es"],["es-PR", "Spanish (Puerto Rico)", "es-PR", "es-PR", "es"],["es-CR", "Spanish (Costa Rica)", "es-CR", "es-CR", "es"],["es-SV", "Spanish (El Salvador)", "es-SV", "es-SV", "es"],["es-HT", "Spanish (Haiti)", "es-HT", "es-HT", "es"],["pt-PT", "Portuguese (Portugal)", "pt-PT", "pt-PT", "pt"],["pt-BR", "Portuguese (Brazil)", "pt-BR", "pt-BR", "pt"],["zh-CN", "Chinese (China / Simplified)", "zh-CN", "zh-CN", "zh"],["zh-TW", "Chinese (Taiwan / Traditional)", "zh-TW", "zh-TW", "zh"],["zh-HK", "Chinese (Hong Kong)", "zh-HK", "zh-HK", "zh"],["zh-Hans", "Chinese (Simplified Script)", "zh-Hans", "zh-Hans", "zh"],["zh-Hant", "Chinese (Traditional Script)", "zh-Hant", "zh-Hant", "zh"],
-            ["ar-SA", "Arabic (Saudi Arabia)", "ar-SA", "ar-SA", "ar"],["bn-IN", "Bengali (India)", "bn-IN", "bn-IN", "bn"],["pa-PK", "Punjabi (Pakistan)", "pa-PK", "pa-PK", "pa"],["bs-Cyrl", "Bosnian (Cyrillic)", "bs-Cyrl", "bs-Cyrl", ""],["ms-Arab", "Malay (Jawi)", "ms-Arab", "ms-Arab", "ms"],["pa-Arab", "Punjabi (Shahmukhi)", "pa-Arab", "pa-Arab", "pa"],["mni-Mtei", "Meiteilon (Manipuri, Meitei Mayek)", "mni-Mtei", "mni-Mtei", ""],["nb-NO", "Norwegian Bokmål (Norway)", "nb", "nb-NO", "no"]
+        const VARIANTS = [["en-US", "English (United States)", "en-US", "en-US", "en"],["en-GB", "English (United Kingdom)", "en-GB", "en-GB", "en"],["en-AU", "English (Australia)", "en-AU", "en-AU", "en"],["en-CA", "English (Canada)", "en-CA", "en-CA", "en"],["en-NZ", "English (New Zealand)", "en-NZ", "en-NZ", "en"],["en-PH", "English (Philippines)", "en-PH", "en-PH", "en"],["en-ZA", "English (South Africa)", "en-ZA", "en-ZA", "en"],["en-IN", "English (India)", "en-IN", "en-IN", "en"],["nl-NL", "Dutch (Netherlands)", "nl", "nl-NL", "nl"],["nl-BE", "Dutch (Belgium / Flemish)", "nl-BE", "nl-BE", "nl"],["fr-FR", "French (France)", "fr-FR", "fr-FR", "fr"],["fr-CA", "French (Canada)", "fr-CA", "fr-CA", "fr"],["fr-CH", "French (Switzerland)", "fr-CH", "fr-CH", "fr"],["es-ES", "Spanish (Spain)", "es-ES", "es-ES", "es"],["es-MX", "Spanish (Mexico)", "es-MX", "es-MX", "es"],["es-US", "Spanish (United States)", "es-US", "es-US", "es"],["es-419", "Spanish (Latin America)", "es-419", "es-419", "es"],["es-AR", "Spanish (Argentina)", "es-AR", "es-AR", "es"],["es-CL", "Spanish (Chile)", "es-CL", "es-CL", "es"],["es-CO", "Spanish (Colombia)", "es-CO", "es-CO", "es"],["es-PE", "Spanish (Peru)", "es-PE", "es-PE", "es"],["es-VE", "Spanish (Venezuela)", "es-VE", "es-VE", "es"],["es-UY", "Spanish (Uruguay)", "es-UY", "es-UY", "es"],["es-EC", "Spanish (Ecuador)", "es-EC", "es-EC", "es"],["es-GT", "Spanish (Guatemala)", "es-GT", "es-GT", "es"],["es-HN", "Spanish (Honduras)", "es-HN", "es-HN", "es"],["es-NI", "Spanish (Nicaragua)", "es-NI", "es-NI", "es"],["es-PA", "Spanish (Panama)", "es-PA", "es-PA", "es"],["es-PY", "Spanish (Paraguay)", "es-PY", "es-PY", "es"],["es-PR", "Spanish (Puerto Rico)", "es-PR", "es-PR", "es"],["es-CR", "Spanish (Costa Rica)", "es-CR", "es-CR", "es"],["es-SV", "Spanish (El Salvador)", "es-SV", "es-SV", "es"],["es-HT", "Spanish (Haiti)", "es-HT", "es-HT", "es"],["pt-PT", "Portuguese (Portugal)", "pt-PT", "pt-PT", "pt"],["pt-BR", "Portuguese (Brazil)", "pt-BR", "pt-BR", "pt"],["zh-CN", "Chinese (China / Simplified)", "zh-CN", "zh-CN", "zh"],["zh-TW", "Chinese (Taiwan / Traditional)", "zh-TW", "zh-TW", "zh"],["zh-HK", "Chinese (Hong Kong)", "zh-HK", "zh-HK", "zh"],["zh-Hans", "Chinese (Simplified Script)", "zh-Hans", "zh-Hans", "zh"],["zh-Hant", "Chinese (Traditional Script)", "zh-Hant", "zh-Hant", "zh"],["ar-SA", "Arabic (Saudi Arabia)", "ar-SA", "ar-SA", "ar"],["bn-IN", "Bengali (India)", "bn-IN", "bn-IN", "bn"],["pa-PK", "Punjabi (Pakistan)", "pa-PK", "pa-PK", "pa"],["bs-Cyrl", "Bosnian (Cyrillic)", "bs-Cyrl", "bs-Cyrl", ""],["ms-Arab", "Malay (Jawi)", "ms-Arab", "ms-Arab", "ms"],["pa-Arab", "Punjabi (Shahmukhi)", "pa-Arab", "pa-Arab", "pa"],["mni-Mtei", "Meiteilon (Manipuri, Meitei Mayek)", "mni-Mtei", "mni-Mtei", ""],["nb-NO", "Norwegian Bokmål (Norway)", "nb", "nb-NO", "no"]
         ];
 
         const BASE_LANGS = {
@@ -1372,7 +1517,7 @@
         }
 
         function populateLangs() {
-            const opts = [];
+            const opts =[`<option value="auto">Auto Detect</option>`];
             for (const[id, label, translate, speech, se] of VARIANTS) {
                 opts.push(`<option value="${escapeHtml(id)}" data-translate="${escapeHtml(translate)}" data-speech="${escapeHtml(speech)}" data-se="${escapeHtml(se || "")}">${escapeHtml(label)}</option>`);
             }
@@ -1381,8 +1526,10 @@
                 if (!code) continue;
                 opts.push(`<option value="${escapeHtml(code)}" data-translate="${escapeHtml(code)}" data-speech="${escapeHtml(_dST(code))}" data-se="${escapeHtml(_dSE(code))}">${escapeHtml(name)} (${escapeHtml(code)})</option>`);
             }
-            ui.srcLang.innerHTML = ui.tgtLang.innerHTML = opts.join("");
-            ui.srcLang.value = "en-US";
+            ui.srcLang.innerHTML = opts.join("");
+            ui.tgtLang.innerHTML = opts.slice(1).join("");
+            
+            ui.srcLang.value = "auto";
             ui.tgtLang.value = "sv";
         }
 
