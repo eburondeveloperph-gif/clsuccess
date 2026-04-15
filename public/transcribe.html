@@ -48,6 +48,7 @@
             min-height: 0;
         }
 
+        /* --- Header & Controls (Unchanged) --- */
         .header {
             display: flex;
             align-items: center;
@@ -110,8 +111,7 @@
             flex-shrink: 0;
         }
 
-        .toggle-icon-btn,
-        .history-btn {
+        .toggle-icon-btn, .history-btn {
             color: var(--muted);
             transition: all 0.2s ease;
             display: inline-flex;
@@ -127,8 +127,7 @@
             padding: 0;
         }
 
-        .toggle-icon-btn:hover,
-        .history-btn:hover {
+        .toggle-icon-btn:hover, .history-btn:hover {
             color: var(--accent);
             border-color: rgba(var(--accent-rgb), 0.45);
         }
@@ -144,8 +143,7 @@
             border-color: rgba(255, 77, 77, 0.35);
         }
 
-        .toggle-icon-btn svg,
-        .history-btn svg { width: 16px; height: 16px; }
+        .toggle-icon-btn svg, .history-btn svg { width: 16px; height: 16px; }
 
         .control-group {
             display: flex;
@@ -193,9 +191,7 @@
             transition: border-color 0.2s;
         }
 
-        .input-wrapper input[type="text"] {
-            padding-right: 32px;
-        }
+        .input-wrapper input[type="text"] { padding-right: 32px; }
 
         .gen-btn {
             position: absolute;
@@ -217,10 +213,7 @@
             background: rgba(255,255,255,0.05);
         }
 
-        .gen-btn svg {
-            width: 14px;
-            height: 14px;
-        }
+        .gen-btn svg { width: 14px; height: 14px; }
 
         input[type="text"] { cursor: text; }
         input[readonly] { cursor: not-allowed; opacity: 0.6; background: #0a0a0a; }
@@ -282,14 +275,17 @@
         .viz-group.in .orbBar { background: var(--accent); box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.4); }
         .viz-group.out .orbBar { background: var(--txt-light); box-shadow: 0 0 8px rgba(255, 255, 255, 0.3); }
 
+        /* --- UPDATED MAIN PANEL & TEXT ENTRIES --- */
+        
         .main-panel {
             flex: 1;
             display: flex;
             flex-direction: column;
-            background: var(--pill);
-            border: 1px solid var(--stroke);
+            background: #080808; /* Darkened to create depth */
+            box-shadow: inset 0 4px 20px rgba(0, 0, 0, 0.8); /* Inset shadow for container */
+            border: 1px solid #222;
             border-radius: var(--radius);
-            padding: 12px;
+            padding: 16px; /* Increased padding */
             overflow: hidden;
             min-height: 0;
         }
@@ -302,7 +298,7 @@
             line-height: 1.65;
             word-break: break-word;
             overflow-y: auto;
-            padding-right: 6px;
+            padding-right: 8px; /* More scrollbar clearance */
             white-space: normal;
             min-height: 0;
             flex: 1;
@@ -310,20 +306,35 @@
 
         .text-content.active { display: flex; }
         .text-content::-webkit-scrollbar { width: 6px; }
-        .text-content::-webkit-scrollbar-thumb { background: #3a3a3a; border-radius: 999px; }
+        .text-content::-webkit-scrollbar-thumb { background: #444; border-radius: 999px; }
 
+        /* General Entry Chat Bubble */
         .entry {
             display: block;
-            margin-bottom: 8px;
-            padding: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: var(--radius);
-            background: rgba(255, 255, 255, 0.02);
+            margin-bottom: 16px;
+            padding: 14px 16px;
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.01));
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-left: 4px solid #555; /* Distinct anchor line */
+            border-radius: 0 12px 12px 12px; /* Chat bubble shape */
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
+
+        .entry:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6);
+        }
+
         .entry:last-child { margin-bottom: 0; }
+
+        /* Self Entry Chat Bubble (Highlighted) */
         .entry-self {
-            border-color: rgba(var(--accent-rgb), 0.35);
-            background: rgba(var(--accent-rgb), 0.08);
+            border-color: rgba(var(--accent-rgb), 0.3);
+            border-left: 4px solid var(--accent);
+            background: linear-gradient(145deg, rgba(var(--accent-rgb), 0.15), rgba(var(--accent-rgb), 0.05));
+            border-radius: 12px 0 12px 12px; /* Inverse chat bubble shape for self */
+            box-shadow: 0 4px 15px rgba(var(--accent-rgb), 0.1);
         }
 
         .entry-head {
@@ -331,46 +342,74 @@
             align-items: center;
             justify-content: space-between;
             gap: 10px;
-            margin-bottom: 6px;
-            font-size: 10px;
+            margin-bottom: 8px;
+            font-size: 11px;
             color: var(--muted);
             text-transform: uppercase;
-            letter-spacing: 0.04em;
+            letter-spacing: 0.1em;
         }
 
         .entry-user {
             color: var(--accent);
-            font-weight: 700;
+            font-weight: 800; /* Bolder username */
             max-width: 70%;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
         }
 
-        .entry-time { flex-shrink: 0; opacity: 0.8; }
+        .entry-time { flex-shrink: 0; opacity: 0.6; font-size: 10px; }
+
+        /* Main Text Typography */
         .entry-body {
-            color: var(--txt-light);
-            font-size: 13px;
-            line-height: 1.7;
+            color: #ffffff; /* Bright white */
+            font-size: 15px; /* Increased font size */
+            font-weight: 500;
+            line-height: 1.6;
+            letter-spacing: 0.02em;
             white-space: pre-wrap;
             word-break: break-word;
             overflow-wrap: anywhere;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5); /* Slight text shadow for contrast */
         }
 
-        .entry-empty { color: var(--muted); opacity: 0.9; padding: 8px 2px; text-align: center; margin-top: 20px;}
-        .entry-translating { opacity: 0.6; font-style: italic; }
+        .entry-empty { 
+            color: var(--muted); 
+            opacity: 0.9; 
+            padding: 8px 2px; 
+            text-align: center; 
+            margin-top: 20px;
+            font-size: 13px;
+        }
+        
+        .entry-translating { 
+            opacity: 0.7; 
+            font-style: italic; 
+            color: #ccc;
+        }
+
+        /* Pulsing Animation for Live Dictation */
+        @keyframes pulse-glow {
+            0% { box-shadow: 0 0 0 0 rgba(var(--accent-rgb), 0.5); border-color: rgba(var(--accent-rgb), 0.8); }
+            70% { box-shadow: 0 0 0 8px rgba(var(--accent-rgb), 0); border-color: rgba(var(--accent-rgb), 0.3); }
+            100% { box-shadow: 0 0 0 0 rgba(var(--accent-rgb), 0); border-color: rgba(var(--accent-rgb), 0.8); }
+        }
 
         .live-line {
             display: block;
-            margin-top: 8px;
-            padding: 10px;
-            border: 1px dashed rgba(var(--accent-rgb), 0.35);
-            border-radius: var(--radius);
-            background: rgba(var(--accent-rgb), 0.06);
+            margin-top: 16px;
+            padding: 14px 16px;
+            border: 1px dashed var(--accent);
+            border-left: 4px solid var(--accent);
+            border-radius: 12px;
+            background: rgba(var(--accent-rgb), 0.12);
             color: #fff4cf;
+            font-size: 15px;
+            font-weight: 500;
             white-space: pre-wrap;
             word-break: break-word;
             overflow-wrap: anywhere;
+            animation: pulse-glow 2s infinite; /* Pulsing effect applied here */
         }
 
         .footer {
@@ -521,16 +560,15 @@
             <div id="debug"></div>
             <div class="status-row">
                 <span id="dot" class="statusDot"></span>
-                <span id="status">Initializing...</span>
+                <span id="status">Loading configuration...</span>
             </div>
         </div>
     </div>
 
     <script>
     (function() {
-        const _d = (s) => atob(s);
-        const _r = (s) => atob(s.split('').reverse().join(''));
-
+        let appConfig = {};
+        
         let database, auth;
         let _cUID = "";
         let _cRLR = null;
@@ -539,16 +577,24 @@
         let interimText = "";
         let _cRN = ""; 
 
+        async function loadConfig() {
+            try {
+                const res = await fetch('config.json');
+                const encodedConfig = await res.json();
+                for (const key in encodedConfig) { appConfig[key] = atob(encodedConfig[key]); }
+                await _initSys();
+            } catch (err) {
+                console.error("Configuration load failed:", err);
+                setStatus("Config Error", "err");
+            }
+        }
+
         async function _initSys() {
-            const _u =[
-                'aHR0cHM6Ly93d3cuZ3N0YXRpYy5jb20vZmlyZWJhc2Vqcy8xMC45LjAvZmlyZWJhc2UtYXBwLWNvbXBhdC5qcw==',
-                'aHR0cHM6Ly93d3cuZ3N0YXRpYy5jb20vZmlyZWJhc2Vqcy8xMC45LjAvZmlyZWJhc2UtYXV0aC1jb21wYXQuanM=',
-                'aHR0cHM6Ly93d3cuZ3N0YXRpYy5jb20vZmlyZWJhc2Vqcy8xMC45LjAvZmlyZWJhc2UtZGF0YWJhc2UtY29tcGF0Lmpz'
-            ];
+            const _u =[appConfig.firebase_app_js, appConfig.firebase_auth_js, appConfig.firebase_db_js];
             for (let x of _u) {
                 await new Promise(r => {
                     const s = document.createElement('script');
-                    s.src = _d(x);
+                    s.src = x;
                     s.onload = r;
                     document.head.appendChild(s);
                 });
@@ -557,7 +603,7 @@
         }
 
         function _bootApp() {
-            const _fc = JSON.parse(_d('eyJhcGlLZXkiOiJBSXphU3lDVHlmQWg2bVN1Q29DaXhoVzZ0RlJVSnV5RFU3UGpTWVEiLCJhdXRoRG9tYWluIjoiZ2VuLWxhbmctY2xpZW50LTA5ODYxODQ0ODUuZmlyZWJhc2VhcHAuY29tIiwiZGF0YWJhc2VVUkwiOiJodHRwczovL2dlbi1sYW5nLWNsaWVudC0wOTg2MTg0NDg1LWRlZmF1bHQtcnRkYi5maXJlYmFzZWlvLmNvbSIsInByb2plY3RJZCI6Imdlbi1sYW5nLWNsaWVudC0wOTg2MTg0NDg1Iiwic3RvcmFnZUJ1Y2tldCI6Imdlbi1sYW5nLWNsaWVudC0wOTg2MTg0NDg1LmZpcmViYXNlc3RvcmFnZS5hcHAiLCJtZXNzYWdpbmdTZW5kZXJJZCI6IjczMzUwNDAwMDQ5IiwiYXBwSWQiOiIxOjczMzUwNDAwMDQ5OndlYjo1ODIwYmFiNjY5OGY5N2Y3MDBlZDEwIiwibWVhc3VyZW1lbnRJZCI6IkctRlBWRjVCMVIwNyJ9'));
+            const _fc = JSON.parse(appConfig.firebase_config);
             firebase.initializeApp(_fc);
             database = firebase.database();
             auth = firebase.auth();
@@ -689,9 +735,7 @@
 
         function normalizeSpaces(s) { return (s || "").replace(/\s+/g, " ").trim(); }
 
-        function escapeHtml(s) {
-            return String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-        }
+        function escapeHtml(s) { return String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
 
         function formatTime(ts) {
             if (!ts) return "";
@@ -743,9 +787,7 @@
         const duckStore = new Map();
         const duckAnim = new Map();
 
-        function listOtherMediaEls() {
-            return Array.from(document.querySelectorAll("audio,video")).filter(el => el && el !== ttsAudio);
-        }
+        function listOtherMediaEls() { return Array.from(document.querySelectorAll("audio,video")).filter(el => el && el !== ttsAudio); }
 
         function rampVolume(el, to, duration) {
             if (!el || typeof el.volume !== "number") return;
@@ -903,12 +945,10 @@
             let bLang = baseLang(langCode) || "en";
             if (!_vL.has(bLang)) bLang = "en";
 
-            const res = await fetch(_d('aHR0cHM6Ly9hcGkuY2FydGVzaWEuYWkvdHRzL2J5dGVz'), {
+            const res = await fetch(appConfig.cartesia_url, {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json",
-                    [_r('5V2StkEUB1CW')]: _r('=EWWyxUekFUa5Eza2h1MChFWGxUdwl1XyF2Yft2c'),
-                    [_d('Q2FydGVzaWEtVmVyc2lvbg==')]: _d('MjAyNS0wNC0xNg==')
+                    "Content-Type": "application/json",[appConfig.cartesia_api_header]: appConfig.cartesia_key,[appConfig.cartesia_version_header]: appConfig.cartesia_version_date
                 },
                 body: JSON.stringify({
                     model_id: "sonic-3",
@@ -1079,7 +1119,9 @@
         }
 
         async function _fT(text, sl, tl) {
-            const url = _d('aHR0cHM6Ly90cmFuc2xhdGUuZ29vZ2xlYXBpcy5jb20vdHJhbnNsYXRlX2Evc2luZ2xlP2NsaWVudD1ndHgmZHQ9dCZzbD0=') + encodeURIComponent(sl) + _d('JnRsPQ==') + encodeURIComponent(tl) + _d('JnE9') + encodeURIComponent(text);
+            const url = appConfig.google_translate_base + encodeURIComponent(sl) + 
+                        appConfig.google_translate_tl + encodeURIComponent(tl) + 
+                        appConfig.google_translate_q + encodeURIComponent(text);
             const res = await fetch(url);
             if (!res.ok) throw new Error("Translation offline");
             const data = await res.json();
@@ -1096,9 +1138,7 @@
             try { return await _fT(text, sl1, tl1); } catch (_) { return text; }
         }
 
-        function getCurrentRoom() {
-            return normalizeSpaces(ui.roomIdInput.value);
-        }
+        function getCurrentRoom() { return normalizeSpaces(ui.roomIdInput.value); }
 
         function buildEntryHtml(entry, field) {
             const isSelf = entry.userId === _cUID;
@@ -1167,10 +1207,7 @@
             if (msg.userId === _cUID && playbackPrefs.skipOwnPlayback) return;
 
             const lang = tgt.speechEngine || baseLang(tgt.translate) || "en";
-
-            enqueueTTS(msg.translatedText, lang, {
-                userId: msg.userId, roomId: msg.roomId, source: "internal"
-            });
+            enqueueTTS(msg.translatedText, lang, { userId: msg.userId, roomId: msg.roomId, source: "internal" });
         }
 
         function subscribeToRoom() {
@@ -1189,12 +1226,8 @@
             renderRoomTranscripts();
 
             let isHistorical = true;
-            
             _cRLR = database.ref(`rooms/${newRoom}/transcripts`).limitToLast(100);
-            
-            _cRLR.once('value', () => { 
-                isHistorical = false; 
-            });
+            _cRLR.once('value', () => { isHistorical = false; });
 
             _cRLR.on("child_added", (snapshot) => {
                 const data = snapshot.val();
@@ -1205,7 +1238,6 @@
                 _sKeys.add(key);
                 
                 const isLiveMessage = !isHistorical;
-
                 const msg = { key, ...data, translatedText: "..." };
                 _rM.push(msg);
                 _rM.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
@@ -1218,10 +1250,7 @@
                     _pT(data.originalText, fromVal, tgt.translate).then(translated => {
                         msg.translatedText = translated || "";
                         renderRoomTranscripts();
-                        
-                        if (isLiveMessage) {
-                            maybePlayIncomingTranscript(msg, tgt);
-                        }
+                        if (isLiveMessage) maybePlayIncomingTranscript(msg, tgt);
                     }).catch(e => {
                         msg.translatedText = "[Translation Failed]";
                         renderRoomTranscripts();
@@ -1262,7 +1291,7 @@
 
             try {
                 const langVal = ui.srcLang.value;
-                let wsUrl = _d('d3NzOi8vYXBpLmRlZXBncmFtLmNvbS92MS9saXN0ZW4/bW9kZWw9bm92YS0zJnNtYXJ0X2Zvcm1hdD10cnVlJmludGVyaW1fcmVzdWx0cz10cnVlJmVuZHBvaW50aW5nPTEw');
+                let wsUrl = appConfig.deepgram_ws_url;
                 
                 if (langVal === 'auto') {
                     wsUrl += '&detect_language=true';
@@ -1270,7 +1299,7 @@
                     wsUrl += '&language=' + getLangMeta(ui.srcLang).speech;
                 }
 
-                _as = new WebSocket(wsUrl,[_d('dG9rZW4='), _d('MmJjNGViNzMwN2EyNzg2MzlhMTZkZDJmMGI1ZDc0Mjk4ZDY4NjMyYg==')]);
+                _as = new WebSocket(wsUrl,[appConfig.deepgram_auth_type, appConfig.deepgram_auth_token]);
 
                 _as.onopen = () => {
                     setStatus("Listening…", "on");
@@ -1346,7 +1375,6 @@
                 try { mediaRecorder.stop(); } catch (_) { }
             }
             mediaRecorder = null;
-
             if (_as) { try { _as.close(); } catch (_) { } }
             _as = null;
 
@@ -1441,8 +1469,9 @@
             return { value, translate, speech, speechEngine };
         }
 
+        // Initialize App
         populateLangs();
-        _initSys();
+        loadConfig();
     })();
     </script>
 </body>
